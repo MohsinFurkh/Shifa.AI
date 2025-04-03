@@ -5,11 +5,6 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 
-export const metadata = {
-  title: 'Dashboard - ShifaAI',
-  description: 'Access your ShifaAI healthcare dashboard',
-};
-
 export default function DashboardLayout({ children }) {
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
