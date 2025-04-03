@@ -1,28 +1,30 @@
 {
-  "name": "shifaai",
-  "version": "1.0.0",
-  "description": "AI-powered healthcare platform",
-  "main": "index.js",
+  "name": "shifa.ai",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
-    "@vercel/speed-insights": "^1.2.0",
-    "autoprefixer": "^10.4.16",
-    "next": "^15.2.4",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.0",
+    "mongodb": "^5.0.0",
+    "next": "13.4.19",
     "next-auth": "^4.24.11",
-    "postcss": "^8.4.31",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "nodemailer": "^6.9.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.14",
+    "eslint": "8.47.0",
+    "eslint-config-next": "13.4.19",
+    "postcss": "^8.4.27",
     "tailwindcss": "^3.3.3"
   }
 }

@@ -7,94 +7,61 @@ import TestimonialsSection from '../components/TestimonialsSection';
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      
-      <main className="flex-grow">
-        <HeroSection />
-        
-        {/* Patient Features */}
-        <FeatureSection 
-          title="Patient-Focused Features" 
-          subtitle="Our platform offers innovative AI solutions designed specifically for patients, making healthcare more accessible, understandable, and personalized."
-          features={[
-            {
-              title: "AI-Powered Symptom Checker",
-              description: "Enter your symptoms and our AI suggests possible conditions and recommended tests.",
-              icon: "ChatBubbleBottomCenterTextIcon",
-            },
-            {
-              title: "Test Recommendation System",
-              description: "Get personalized test recommendations based on your symptoms and medical history.",
-              icon: "ClipboardDocumentCheckIcon",
-            },
-            {
-              title: "Report Analysis & Insights",
-              description: "Upload your medical reports and our AI will read and explain them in simple language.",
-              icon: "DocumentChartBarIcon",
-            },
-            {
-              title: "Medicine Recommendations",
-              description: "Receive AI-suggested medication options based on your diagnosis.",
-              icon: "BeakerIcon",
-            },
-            {
-              title: "Telemedicine Integration",
-              description: "Connect with qualified doctors for AI-assisted consultations from anywhere.",
-              icon: "VideoCameraIcon",
-            },
-            {
-              title: "Health Dashboard",
-              description: "Access your personal health records, test results, and AI recommendations in one place.",
-              icon: "ChartBarIcon",
-            },
-          ]}
-          bgColor="bg-gray-50"
-        />
-        
-        {/* Healthcare Professional Features */}
-        <FeatureSection 
-          title="Powerful Tools for Healthcare Professionals" 
-          subtitle="Our AI-powered platform provides a suite of tools designed to enhance clinical decision-making, improve efficiency, and elevate patient care."
-          features={[
-            {
-              title: "AI-Powered Medical Image Analysis",
-              description: "Our advanced algorithms detect abnormalities in medical images with high precision.",
-              icon: "PhotoIcon",
-            },
-            {
-              title: "Automated Report Summarization",
-              description: "Save time with AI that summarizes lengthy lab reports and medical histories into concise, actionable insights.",
-              icon: "DocumentTextIcon",
-            },
-            {
-              title: "Patient Case Management",
-              description: "Track patient progress and view AI-generated health insights efficiently.",
-              icon: "UserGroupIcon",
-            },
-            {
-              title: "Clinical Decision Support",
-              description: "Access AI-powered diagnostic suggestions and treatment recommendations based on the latest medical research.",
-              icon: "LightBulbIcon",
-            },
-            {
-              title: "Secure Collaboration",
-              description: "Collaborate with colleagues and specialists securely while maintaining strict HIPAA compliance.",
-              icon: "LockClosedIcon",
-            },
-            {
-              title: "Research & Analytics",
-              description: "Leverage anonymized clinical data for research and quality improvement.",
-              icon: "PresentationChartLineIcon",
-            },
-          ]}
-          bgColor="bg-white"
-        />
-        
-        <TestimonialsSection />
-      </main>
-      
-      <Footer />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
+            Welcome to Shifa.AI
+          </h1>
+          <p className="mt-5 max-w-xl mx-auto text-xl text-gray-500">
+            Your AI-powered healthcare platform for better health management.
+          </p>
+        </div>
+
+        <div className="mt-10 flex justify-center space-x-4">
+          <Link
+            href="/login"
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+          >
+            Login
+          </Link>
+          <Link
+            href="/register"
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200"
+          >
+            Register
+          </Link>
+        </div>
+
+        <div className="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-gray-900">For Patients</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Book appointments, track your health, and communicate with your doctors.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-gray-900">For Doctors</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Manage appointments, access patient records, and provide better care.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg font-medium text-gray-900">AI-Powered</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Get intelligent insights and recommendations for better healthcare.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

@@ -1,91 +1,90 @@
 "use client";
 
-import { createContext, useState, useContext, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Create authentication context
 const AuthContext = createContext();
 
 // Custom hook to use auth context
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
 
-export const AuthProvider = ({ children }) => {
-  const router = useRouter();
-  const pathname = usePathname();
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  // Check if there's an existing user session in localStorage on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem('shifaai_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Check if user is logged in
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+          }
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
-  // Check routing based on user type
-  useEffect(() => {
-    // Only run after initial load
-    if (loading) return;
-    
-    // If no user and on a protected route, redirect to login
-    if (!user && pathname !== '/' && pathname !== '/login' && pathname !== '/register') {
-      router.push('/login');
-      return;
-    }
+  const login = async (email, password) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // If logged in user is on the wrong dashboard type
-    if (user) {
-      const inPatientDashboard = pathname.startsWith('/dashboard/patient');
-      const inDoctorDashboard = pathname.startsWith('/dashboard/doctor');
-      const inAdminDashboard = pathname.startsWith('/dashboard/admin');
-      
-      // Redirect if wrong dashboard
-      if (user.type === 'patient' && (inDoctorDashboard || inAdminDashboard)) {
-        router.push('/dashboard/patient');
-      } else if (user.type === 'doctor' && (inPatientDashboard || inAdminDashboard)) {
-        router.push('/dashboard/doctor');
-      } else if (user.type === 'admin' && (inPatientDashboard || inDoctorDashboard)) {
-        router.push('/dashboard/admin');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Login failed');
       }
-    }
-  }, [user, loading, pathname, router]);
 
-  // Login function
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem('shifaai_user', JSON.stringify(userData));
-    
-    // Redirect based on user type
-    if (userData.type === 'patient') {
-      router.push('/dashboard/patient');
-    } else if (userData.type === 'doctor') {
-      router.push('/dashboard/doctor');
-    } else if (userData.type === 'admin') {
-      router.push('/dashboard/admin');
+      const data = await response.json();
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+      router.push('/dashboard');
+      return data;
+    } catch (error) {
+      throw error;
     }
   };
 
-  // Logout function
   const logout = () => {
+    localStorage.removeItem('token');
     setUser(null);
-    localStorage.removeItem('shifaai_user');
-    router.push('/');
+    router.push('/login');
   };
 
-  // Update user profile
-  const updateProfile = (newUserData) => {
-    const updatedUser = { ...user, ...newUserData };
-    setUser(updatedUser);
-    localStorage.setItem('shifaai_user', JSON.stringify(updatedUser));
+  const value = {
+    user,
+    loading,
+    login,
+    logout,
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, updateProfile, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
 
 export default AuthContext; 
