@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 export async function POST(request) {
   try {
@@ -48,9 +49,20 @@ export async function POST(request) {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'fallback_secret_for_dev_only',
       { expiresIn: '1d' }
     );
+
+    // Set HTTP-only cookie with the token
+    cookies().set({
+      name: 'token',
+      value: token,
+      httpOnly: true,
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24, // 1 day
+      sameSite: 'lax'
+    });
 
     // Remove sensitive data before sending response
     const { password: _, ...userWithoutPassword } = user;

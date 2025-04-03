@@ -4,15 +4,16 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Create authentication context
-const AuthContext = createContext();
+const AuthContext = createContext({
+  user: null,
+  loading: true,
+  login: async () => {},
+  logout: () => {}
+});
 
 // Custom hook to use auth context
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }) {
@@ -89,7 +90,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
