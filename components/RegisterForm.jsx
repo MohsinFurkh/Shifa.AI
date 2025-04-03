@@ -1,20 +1,23 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function RegisterForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    userType: 'patient', // Default to patient
+    role: 'patient', // Default to patient
     agreeToTerms: false,
   });
 
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -35,12 +38,8 @@ export default function RegisterForm() {
   const validateForm = () => {
     const errors = {};
     
-    if (!formData.firstName.trim()) {
-      errors.firstName = 'First name is required';
-    }
-    
-    if (!formData.lastName.trim()) {
-      errors.lastName = 'Last name is required';
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
     }
     
     if (!formData.email) {
@@ -77,19 +76,80 @@ export default function RegisterForm() {
     }
     
     setIsSubmitting(true);
+    setSuccess(null);
     
     try {
-      // Mock registration success - would be replaced with actual API call
-      console.log('Registering with:', formData);
+      // Prepare data for API
+      const apiData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      };
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Submitting registration data:', apiData);
       
-      // Redirect to dashboard based on user type
-      window.location.href = `/dashboard/${formData.userType}`;
+      // Call the registration API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      });
+      
+      console.log('Registration response status:', response.status);
+      const data = await response.json();
+      console.log('Registration response data:', data);
+      
+      if (response.ok && data.success) {
+        setSuccess(data.message || 'Registration successful! Please check your email to verify your account.');
+        
+        // Check if user was added to MongoDB
+        setTimeout(async () => {
+          try {
+            const verifyResponse = await fetch('/api/auth/check-verification', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email: formData.email }),
+            });
+            
+            const verifyData = await verifyResponse.json();
+            
+            if (verifyResponse.ok && verifyData.success) {
+              setSuccess(prev => 
+                `${prev} ✅ Your account has been registered in our database.${
+                  verifyData.isVerified 
+                    ? ' Your email is already verified.' 
+                    : ' Please check your email for verification instructions.'
+                }`
+              );
+            }
+          } catch (error) {
+            console.error('Error checking verification status:', error);
+          }
+        }, 2000);
+        
+        // Clear form
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          role: 'patient',
+          agreeToTerms: false,
+        });
+      } else {
+        setFormErrors({
+          general: data.error || 'Registration failed. Please try again.',
+        });
+      }
     } catch (error) {
+      console.error('Registration error:', error);
       setFormErrors({
-        general: 'Registration failed. Please try again.',
+        general: `Registration failed: ${error.message}. Please try again.`,
       });
     } finally {
       setIsSubmitting(false);
@@ -106,49 +166,33 @@ export default function RegisterForm() {
         </div>
       )}
       
-      <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-            First name
-          </label>
-          <div className="mt-1">
-            <input
-              type="text"
-              name="firstName"
-              id="firstName"
-              autoComplete="given-name"
-              className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${
-                formErrors.firstName ? 'ring-red-300' : 'ring-gray-300'
-              } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
-              value={formData.firstName}
-              onChange={handleChange}
-            />
-            {formErrors.firstName && (
-              <p className="mt-1 text-sm text-red-600">{formErrors.firstName}</p>
-            )}
+      {success && (
+        <div className="rounded-md bg-green-50 p-4">
+          <div className="text-sm text-green-700">
+            {success}
           </div>
         </div>
-
-        <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-            Last name
-          </label>
-          <div className="mt-1">
-            <input
-              type="text"
-              name="lastName"
-              id="lastName"
-              autoComplete="family-name"
-              className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${
-                formErrors.lastName ? 'ring-red-300' : 'ring-gray-300'
-              } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
-              value={formData.lastName}
-              onChange={handleChange}
-            />
-            {formErrors.lastName && (
-              <p className="mt-1 text-sm text-red-600">{formErrors.lastName}</p>
-            )}
-          </div>
+      )}
+      
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          Full Name
+        </label>
+        <div className="mt-1">
+          <input
+            type="text"
+            name="name"
+            id="name"
+            autoComplete="name"
+            className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${
+              formErrors.name ? 'ring-red-300' : 'ring-gray-300'
+            } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
+            value={formData.name}
+            onChange={handleChange}
+          />
+          {formErrors.name && (
+            <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+          )}
         </div>
       </div>
 
@@ -222,15 +266,15 @@ export default function RegisterForm() {
       </div>
 
       <div>
-        <label htmlFor="userType" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="role" className="block text-sm font-medium text-gray-700">
           I am a
         </label>
         <div className="mt-1">
           <select
-            id="userType"
-            name="userType"
+            id="role"
+            name="role"
             className="block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-            value={formData.userType}
+            value={formData.role}
             onChange={handleChange}
           >
             <option value="patient">Patient</option>
@@ -274,6 +318,15 @@ export default function RegisterForm() {
         >
           {isSubmitting ? 'Creating account...' : 'Create account'}
         </button>
+      </div>
+      
+      <div className="text-center">
+        <p className="text-sm text-gray-600">
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500">
+            Sign in
+          </Link>
+        </p>
       </div>
     </form>
   );

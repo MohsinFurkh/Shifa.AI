@@ -1,5 +1,5 @@
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '../contexts/AuthContext';
 
 export const metadata = {
   title: 'Shifa.AI - AI-Powered Healthcare Platform',
