@@ -5,26 +5,39 @@ import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginForm() {
-  const { login } = useAuth();
+  // Using state to handle login without context temporarily
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('patient');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Create a safe login handler that doesn't use context
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const result = await login(email, password);
-      if (!result.success) {
-        setError(result.error || 'Login failed');
+      // Direct API call instead of using context
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        localStorage.setItem('token', data.token);
+        window.location.href = '/dashboard'; // Simple redirect
+      } else {
+        setError(data.error || 'Login failed');
       }
     } catch (err) {
-      setError('An error occurred during login');
       console.error('Login error:', err);
+      setError('An error occurred during login');
     } finally {
       setLoading(false);
     }

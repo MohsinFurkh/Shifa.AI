@@ -69,6 +69,7 @@ export function AuthProvider({ children }) {
         return { success: false, error: data.error };
       }
     } catch (error) {
+      console.error('Login error:', error);
       return { success: false, error: 'An error occurred during login' };
     }
   };

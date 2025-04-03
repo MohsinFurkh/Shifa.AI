@@ -47,18 +47,35 @@ export async function POST(request) {
       updatedAt: new Date(),
     });
 
-    // Send verification email
-    await sendVerificationEmail(email, verificationToken);
+    // Try to send verification email, but don't fail registration if it fails
+    let emailSent = true;
+    let emailError = null;
+    
+    try {
+      await sendVerificationEmail(email, verificationToken);
+    } catch (emailErr) {
+      console.error('Failed to send verification email:', emailErr);
+      emailSent = false;
+      emailError = emailErr.message;
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Registration successful. Please check your email to verify your account.',
+      message: emailSent 
+        ? 'Registration successful. Please check your email to verify your account.' 
+        : 'Registration successful, but there was a problem sending the verification email. Please contact support.',
+      emailSent,
+      emailError,
       userId: result.insertedId
     });
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { success: false, error: 'An error occurred during registration' },
+      { 
+        success: false, 
+        error: 'An error occurred during registration',
+        details: error.message
+      },
       { status: 500 }
     );
   }
