@@ -58,14 +58,15 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
         localStorage.setItem('token', data.token);
         setUser(data.user);
+        router.push('/dashboard');
         return { success: true };
       } else {
-        const error = await response.json();
-        return { success: false, error: error.message };
+        return { success: false, error: data.error };
       }
     } catch (error) {
       return { success: false, error: 'An error occurred during login' };

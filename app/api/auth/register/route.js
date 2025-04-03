@@ -10,7 +10,7 @@ export async function POST(request) {
 
     if (!name || !email || !password || !role) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { success: false, error: 'All fields are required' },
         { status: 400 }
       );
     }
@@ -22,7 +22,7 @@ export async function POST(request) {
     const existingUser = await users.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User already exists' },
+        { success: false, error: 'User already exists' },
         { status: 400 }
       );
     }
@@ -50,17 +50,15 @@ export async function POST(request) {
     // Send verification email
     await sendVerificationEmail(email, verificationToken);
 
-    return NextResponse.json(
-      {
-        message: 'User registered successfully. Please check your email to verify your account.',
-        userId: result.insertedId,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: 'Registration successful. Please check your email to verify your account.',
+      userId: result.insertedId
+    });
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Failed to register user' },
+      { success: false, error: 'An error occurred during registration' },
       { status: 500 }
     );
   }

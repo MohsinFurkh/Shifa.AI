@@ -9,7 +9,7 @@ export async function POST(request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { success: false, error: 'Email and password are required' },
         { status: 400 }
       );
     }
@@ -22,7 +22,7 @@ export async function POST(request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { success: false, error: 'Invalid email or password' },
         { status: 401 }
       );
     }
@@ -30,7 +30,7 @@ export async function POST(request) {
     // Check if user is verified
     if (!user.isVerified) {
       return NextResponse.json(
-        { error: 'Please verify your email before logging in' },
+        { success: false, error: 'Please verify your email before logging in' },
         { status: 401 }
       );
     }
@@ -40,37 +40,30 @@ export async function POST(request) {
 
     if (!isValidPassword) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { success: false, error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      {
-        userId: user._id,
-        email: user.email,
-        role: user.role,
-      },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '1d' }
     );
 
-    // Remove sensitive data from user object
+    // Remove sensitive data before sending response
     const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json(
-      {
-        message: 'Login successful',
-        user: userWithoutPassword,
-        token,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      success: true,
+      token,
+      user: userWithoutPassword
+    });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Failed to login' },
+      { success: false, error: 'An error occurred during login' },
       { status: 500 }
     );
   }
