@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../utils/db';
-import User from '../../../models/user';
+import dbConnect from '../../utils/db.js';
+import User from '../../models/user.js';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 

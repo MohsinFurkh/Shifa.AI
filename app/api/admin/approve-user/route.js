@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../utils/db';
-import User from '../../../models/user';
+import dbConnect from '../../utils/db.js';
+import User from '../../models/user.js';
 import { getServerSession } from 'next-auth';
 import nodemailer from 'nodemailer';
 
