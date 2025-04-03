@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../utils/db';
-import User from '../../models/user';
-import crypto from 'crypto';
+import dbConnect from '../../../utils/db';
+import User from '../../../models/user';
+import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 
-export async function POST(req) {
+export async function POST(request) {
   try {
+    const { name, email, password, userType } = await request.json();
+    
     await dbConnect();
-    const { name, email, password, role } = await req.json();
-
+    
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -17,47 +18,41 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-
-    // Generate verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
     // Create new user
     const user = new User({
       name,
       email,
-      password,
-      role,
-      verificationToken,
+      password: hashedPassword,
+      role: userType,
       status: 'pending'
     });
-
+    
     await user.save();
-
+    
     // Send verification email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
+        pass: process.env.EMAIL_PASS
       }
     });
-
-    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`;
     
-    await transporter.sendMail({
+    const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Verify your email address',
-      html: `
-        <h1>Welcome to Shifa.AI</h1>
-        <p>Please click the link below to verify your email address:</p>
-        <a href="${verificationUrl}">${verificationUrl}</a>
-        <p>If you did not create an account, please ignore this email.</p>
-      `
-    });
-
+      subject: 'Welcome to ShifaAI - Verify Your Email',
+      text: `Hello ${name},\n\nWelcome to ShifaAI! Please verify your email by clicking the link below:\n\n${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${user._id}\n\nBest regards,\nShifaAI Team`
+    };
+    
+    await transporter.sendMail(mailOptions);
+    
     return NextResponse.json(
-      { message: 'Registration successful. Please check your email to verify your account.' },
+      { message: 'User registered successfully. Please check your email for verification.' },
       { status: 201 }
     );
   } catch (error) {
