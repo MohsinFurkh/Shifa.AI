@@ -53,6 +53,21 @@ export default function LoginForm() {
             </div>
           )}
           
+          <div className="rounded-md bg-blue-50 p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.75.75 0 00.736-.593l.528-3.17A1.454 1.454 0 0111.465 6h.035a1.45 1.45 0 011.465 1.237l.528 3.17a.75.75 0 00.736.593H14.5a.75.75 0 000-1.5h-.258l-.468-2.808a2.954 2.954 0 00-2.937-2.492h-.035a2.954 2.954 0 00-2.937 2.492L8.258 9H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1 md:flex md:justify-between">
+                <p className="text-sm text-blue-700">
+                  This is a demo login. You can use any email and password. Select your user type below.
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
@@ -87,6 +102,7 @@ export default function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
+                  placeholder="Enter any password for demo"
                 />
               </div>
             </div>
@@ -108,6 +124,9 @@ export default function LoginForm() {
                   <option value="admin">Admin</option>
                 </select>
               </div>
+              <p className="mt-2 text-sm text-gray-500">
+                Selecting a user type will redirect you to the appropriate dashboard after login.
+              </p>
             </div>
 
             <div className="flex items-center justify-between">
