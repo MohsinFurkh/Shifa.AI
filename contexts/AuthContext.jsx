@@ -24,16 +24,18 @@ export function AuthProvider({ children }) {
     // Check if user is logged in
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('token');
+          if (token) {
+            const response = await fetch('/api/auth/me', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            if (response.ok) {
+              const userData = await response.json();
+              setUser(userData);
+            }
           }
         }
       } catch (error) {
@@ -56,25 +58,24 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        setUser(data.user);
+        return { success: true };
+      } else {
         const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+        return { success: false, error: error.message };
       }
-
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-      router.push('/dashboard');
-      return data;
     } catch (error) {
-      throw error;
+      return { success: false, error: 'An error occurred during login' };
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const value = {
@@ -84,7 +85,11 @@ export function AuthProvider({ children }) {
     logout,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 }
 
 export default AuthContext; 
