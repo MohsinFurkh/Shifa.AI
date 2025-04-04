@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
+    serverExternalPackages: ['mongoose'],
   },
   webpack: (config) => {
     // This is to handle the native dependencies

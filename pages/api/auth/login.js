@@ -1,8 +1,8 @@
-import connectDB from '../../../lib/db';
-import User from '../../../models/User';
-import { generateToken } from '../../../lib/jwt';
+const connectDB = require('../../../lib/db');
+const User = require('../../../models/User');
+const { generateToken } = require('../../../lib/jwt');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Only allow POST method
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });

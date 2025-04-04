@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 // Check if the User model already exists to prevent overwriting during hot reloads
 const UserSchema = new mongoose.Schema({
@@ -59,4 +59,4 @@ UserSchema.methods.comparePassword = async function(candidatePassword) {
 
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-export default User; 
+module.exports = User; 
