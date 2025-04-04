@@ -1,98 +1,141 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { createContext, useState, useContext, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
 // Create authentication context
-const AuthContext = createContext({
-  user: null,
-  loading: true,
-  login: async () => {},
-  logout: () => {}
-});
+const AuthContext = createContext();
 
 // Custom hook to use auth context
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
+  // Check if there's an existing user session in localStorage on initial load
   useEffect(() => {
-    // Check if user is logged in
-    const checkAuth = async () => {
-      try {
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const response = await fetch('/api/auth/me', {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (response.ok) {
-              const userData = await response.json();
-              setUser(userData);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
+    const storedUser = localStorage.getItem('shifaai_user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+  // Check routing based on user type
+  useEffect(() => {
+    // Only run after initial load
+    if (loading) return;
+    
+    // If no user and on a protected route, redirect to login
+    if (!user && pathname !== '/' && pathname !== '/login' && pathname !== '/register') {
+      router.push('/login');
+      return;
+    }
 
-      const data = await response.json();
+    // If logged in user is on the wrong dashboard type
+    if (user) {
+      const inPatientDashboard = pathname.startsWith('/dashboard/patient');
+      const inDoctorDashboard = pathname.startsWith('/dashboard/doctor');
+      const inAdminDashboard = pathname.startsWith('/dashboard/admin');
       
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        setUser(data.user);
-        router.push('/dashboard');
-        return { success: true };
-      } else {
-        return { success: false, error: data.error };
+      // Redirect if wrong dashboard
+      if (user.type === 'patient' && (inDoctorDashboard || inAdminDashboard)) {
+        router.push('/dashboard/patient');
+      } else if (user.type === 'doctor' && (inPatientDashboard || inAdminDashboard)) {
+        router.push('/dashboard/doctor');
+      } else if (user.type === 'admin' && (inPatientDashboard || inDoctorDashboard)) {
+        router.push('/dashboard/admin');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: 'An error occurred during login' };
+    }
+  }, [user, loading, pathname, router]);
+
+  // Login function
+  const login = (userData) => {
+    // Make sure we have the token
+    if (!userData.token) {
+      console.error('Login failed: No token provided');
+      return;
+    }
+
+    // Save user data with token
+    const userWithToken = {
+      ...userData
+    };
+    
+    setUser(userWithToken);
+    localStorage.setItem('shifaai_user', JSON.stringify(userWithToken));
+    
+    // Redirect based on user type
+    if (userData.type === 'patient') {
+      router.push('/dashboard/patient');
+    } else if (userData.type === 'doctor') {
+      router.push('/dashboard/doctor');
+    } else if (userData.type === 'admin') {
+      router.push('/dashboard/admin');
     }
   };
 
+  // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
     setUser(null);
+    localStorage.removeItem('shifaai_user');
     router.push('/');
   };
 
-  const value = {
-    user,
-    loading,
-    login,
-    logout,
+  // Update user profile
+  const updateProfile = (newUserData) => {
+    const updatedUser = { ...user, ...newUserData };
+    setUser(updatedUser);
+    localStorage.setItem('shifaai_user', JSON.stringify(updatedUser));
+  };
+
+  // Get the auth token
+  const getToken = () => {
+    return user?.token;
+  };
+
+  // Function to make authenticated API requests
+  const authFetch = async (url, options = {}) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`
+    };
+
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
+
+    // Handle token expiration
+    if (response.status === 401) {
+      logout();
+      throw new Error('Your session has expired. Please login again.');
+    }
+
+    return response;
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      updateProfile, 
+      loading,
+      getToken,
+      authFetch 
+    }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export default AuthContext; 

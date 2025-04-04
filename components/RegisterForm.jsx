@@ -81,22 +81,38 @@ export default function RegisterForm() {
     setIsSubmitting(true);
     
     try {
-      // Mock registration success since the API endpoint doesn't exist yet
-      console.log('Registering with:', formData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Log the user in using AuthContext
+      // Use the new API endpoint path
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          userType: formData.userType,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Login the user with the returned data
       login({
-        id: Date.now().toString(), // Generate a random ID
-        email: formData.email,
-        name: `${formData.firstName} ${formData.lastName}`,
-        type: formData.userType
+        id: data.data.id,
+        email: data.data.email,
+        name: data.data.name,
+        type: data.data.type,
+        token: data.data.token
       });
     } catch (error) {
       setFormErrors({
-        general: 'Registration failed. Please try again.',
+        general: error.message || 'Registration failed. Please try again.',
       });
       setIsSubmitting(false);
     }

@@ -1,26 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   experimental: {
-    serverActions: true,
+    serverComponentsExternalPackages: ['mongoose'],
   },
-  images: {
-    domains: ['localhost'],
+  webpack: (config) => {
+    // This is to handle the native dependencies
+    config.externals.push({
+      'mongodb-client-encryption': 'mongodb-client-encryption',
+    });
+    return config;
   },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, must-revalidate',
-          },
-        ],
-      },
-    ];
-  },
-}
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig; 

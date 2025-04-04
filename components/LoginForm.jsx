@@ -18,18 +18,35 @@ export default function LoginForm() {
     setLoading(true);
     
     try {
-      // Mock login since the API endpoint doesn't exist yet
-      setTimeout(() => {
-        login({
-          id: '123',
+      // Use the new API endpoint path
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email,
-          name: email.split('@')[0],
-          type: userType
-        });
-        setLoading(false);
-      }, 1000);
+          password,
+          userType,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Login the user with the returned data
+      login({
+        id: data.data.id,
+        email: data.data.email,
+        name: data.data.name,
+        type: data.data.type,
+        token: data.data.token
+      });
     } catch (err) {
-      setError('Failed to login. Please check your credentials.');
+      setError(err.message || 'Failed to login. Please check your credentials.');
       setLoading(false);
     }
   };
