@@ -31,10 +31,31 @@ export default function LoginForm() {
         }),
       });
 
-      const data = await response.json();
-      
+      // Check response status before trying to parse JSON
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError);
+          errorMessage = `Server error (${response.status}): ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Parse the response only if it's OK
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('Failed to parse success response:', jsonError);
+        throw new Error('Invalid response from server');
+      }
+      
+      // Validate the data
+      if (!data || !data.data || !data.data.token) {
+        throw new Error('Invalid response format from server');
       }
 
       // Login the user with the returned data
@@ -46,6 +67,7 @@ export default function LoginForm() {
         token: data.data.token
       });
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.message || 'Failed to login. Please check your credentials.');
       setLoading(false);
     }
