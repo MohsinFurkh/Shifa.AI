@@ -1,4 +1,5 @@
-const { getMongoClient } = require('../../lib/db');
+// Convert CommonJS imports to ES modules
+import { getMongoClient } from '../../lib/db';
 
 // Make sure this function is exported as default
 export default async function handler(req, res) {
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
         users: users.map(user => ({
           id: user._id,
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
+          name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email,
           type: user.userType
         }))
       }

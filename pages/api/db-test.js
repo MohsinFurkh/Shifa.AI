@@ -1,4 +1,4 @@
-const connectDB = require('../../lib/db');
+import connectDB from '../../lib/db';
 
 // Make sure this function is exported as default
 export default async function handler(req, res) {

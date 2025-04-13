@@ -1,7 +1,10 @@
 // Script to test MongoDB connection
-require('dotenv').config({ path: './.env.local' });
-const connectDB = require('../lib/db');
-const { getMongoClient } = require('../lib/db');
+import dotenv from 'dotenv';
+import connectDB from '../lib/db.js';
+import { getMongoClient } from '../lib/db.js';
+
+// Load environment variables from .env.local
+dotenv.config({ path: './.env.local' });
 
 async function testDBConnection() {
   try {

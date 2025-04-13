@@ -1,6 +1,6 @@
-const connectDB = require('../../../lib/db');
-const User = require('../../../models/User');
-const { generateToken } = require('../../../lib/jwt');
+import connectDB from '../../../lib/db';
+import User from '../../../models/User';
+import { generateToken } from '../../../lib/jwt';
 
 // Make sure this function is exported as default
 export default async function handler(req, res) {
