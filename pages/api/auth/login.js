@@ -1,5 +1,4 @@
-import connectDB from '../../../lib/db';
-import User from '../../../models/User';
+import { findUserByEmail, comparePassword } from '../../../lib/static-data';
 import { generateToken } from '../../../lib/jwt';
 
 // Make sure this function is exported as default
@@ -12,11 +11,8 @@ export default async function handler(req, res) {
   try {
     const { email, password, userType } = req.body;
     
-    // Connect to the database
-    await connectDB();
-    
-    // Find user by email
-    const user = await User.findOne({ email });
+    // Find user by email in static data
+    const user = findUserByEmail(email);
     
     // Check if user exists and is of the correct type
     if (!user || user.userType !== userType) {
@@ -24,7 +20,7 @@ export default async function handler(req, res) {
     }
     
     // Verify password
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await comparePassword(user.password, password);
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -36,7 +32,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       data: {
-        id: user._id,
+        id: user.id,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
         type: user.userType,
