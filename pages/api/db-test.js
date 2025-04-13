@@ -1,6 +1,7 @@
 const connectDB = require('../../lib/db');
 
-module.exports = async function handler(req, res) {
+// Make sure this function is exported as default
+export default async function handler(req, res) {
   try {
     await connectDB();
     

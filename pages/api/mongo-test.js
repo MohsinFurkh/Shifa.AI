@@ -1,6 +1,7 @@
 const { getMongoClient } = require('../../lib/db');
 
-module.exports = async function handler(req, res) {
+// Make sure this function is exported as default
+export default async function handler(req, res) {
   try {
     // Get MongoDB client and database
     const { client, db } = await getMongoClient();

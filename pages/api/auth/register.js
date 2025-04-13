@@ -2,7 +2,8 @@ const connectDB = require('../../../lib/db');
 const User = require('../../../models/User');
 const { generateToken } = require('../../../lib/jwt');
 
-module.exports = async function handler(req, res) {
+// Make sure this function is exported as default
+export default async function handler(req, res) {
   // Only allow POST method
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
