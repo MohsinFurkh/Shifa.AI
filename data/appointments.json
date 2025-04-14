@@ -1,0 +1,14 @@
+[
+  {
+    "id": "appointment-1744614833589",
+    "patientId": "patient-1744614196275",
+    "patientName": "Ishfaq Ahmad",
+    "doctorName": "Dr. Ayesha Malik",
+    "doctorSpecialty": "Dermatologist",
+    "date": "2025-04-20",
+    "time": "10:00 AM",
+    "status": "upcoming",
+    "reason": "General Health Check-up",
+    "createdAt": "2025-04-14T07:13:53.589Z"
+  }
+]

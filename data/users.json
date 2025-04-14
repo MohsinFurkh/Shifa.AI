@@ -61,5 +61,14 @@
     "password": "$2a$10$OJNWJxhQc6qWehd6mjN/Ne9WgSiamZnfb1AWVhs5e1vl93z7FoyBG",
     "userType": "patient",
     "createdAt": "2025-04-14T05:03:18.736Z"
+  },
+  {
+    "id": "patient-1744614196275",
+    "firstName": "Ishfaq",
+    "lastName": "Ahmad",
+    "email": "ishfaq@gmail.com",
+    "password": "$2a$10$BLDOe4duo3t2gcjxVn5Sie0fkYN73qrEciVmzkVpYAV/nVmzsAETi",
+    "userType": "patient",
+    "createdAt": "2025-04-14T07:03:16.275Z"
   }
 ]

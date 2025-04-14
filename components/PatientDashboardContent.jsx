@@ -82,99 +82,202 @@ export default function PatientDashboardContent() {
   
   // Effect to load user data
   useEffect(() => {
-    if (user) {
-      // Try to get the most up-to-date data from localStorage
-      let userData = user;
-      const storedUserData = localStorage.getItem('shifaai_user');
-      
-      if (storedUserData) {
+    const fetchUserData = async () => {
+      if (user) {
+        setLoading(true);
+        
         try {
-          const parsedData = JSON.parse(storedUserData);
-          // Use localStorage data if it's for the current user
-          if (parsedData.email === user.email && parsedData.id === user.id) {
-            userData = parsedData;
+          // Try to get the most up-to-date data from localStorage first
+          let userData = user;
+          const storedUserData = localStorage.getItem('shifaai_user');
+          
+          if (storedUserData) {
+            try {
+              const parsedData = JSON.parse(storedUserData);
+              // Use localStorage data if it's for the current user
+              if (parsedData.email === user.email && parsedData.id === user.id) {
+                userData = parsedData;
+              }
+            } catch (e) {
+              console.error("Error parsing stored user data", e);
+            }
           }
-        } catch (e) {
-          console.error("Error parsing stored user data", e);
+          
+          // Initialize empty metrics array
+          const metrics = [];
+          
+          // Fetch health metrics from API
+          const healthResponse = await fetch(`/api/patient/get-health-metrics?userId=${user.id}`);
+          let healthData = null;
+          
+          if (healthResponse.ok) {
+            const responseData = await healthResponse.json();
+            healthData = responseData.data;
+          }
+          
+          // Fetch appointments from API
+          const appointmentsResponse = await fetch(`/api/patient/appointments?userId=${user.id}`);
+          let appointmentsData = [];
+          
+          if (appointmentsResponse.ok) {
+            const responseData = await appointmentsResponse.json();
+            appointmentsData = responseData.data || [];
+          } else {
+            // Fallback to user data
+            appointmentsData = userData.appointments || [];
+          }
+          
+          // Use health metrics from API if available, otherwise fallback to user data
+          if (healthData && healthData.current) {
+            const currentMetrics = healthData.current;
+            
+            // Add blood pressure if available
+            if (currentMetrics.bloodPressure) {
+              metrics.push({
+                id: 1,
+                name: 'Blood Pressure',
+                value: currentMetrics.bloodPressure,
+                status: getBPStatus(currentMetrics.bloodPressure),
+                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
+                icon: HeartIcon,
+                color: getStatusColor(getBPStatus(currentMetrics.bloodPressure)),
+              });
+            }
+            
+            // Add heart rate if available
+            if (currentMetrics.heartRate) {
+              metrics.push({
+                id: 2,
+                name: 'Heart Rate',
+                value: `${currentMetrics.heartRate} bpm`,
+                status: getHeartRateStatus(currentMetrics.heartRate),
+                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
+                icon: HeartIcon,
+                color: getStatusColor(getHeartRateStatus(currentMetrics.heartRate)),
+              });
+            }
+            
+            // Add glucose level if available
+            if (currentMetrics.glucoseLevel) {
+              metrics.push({
+                id: 3,
+                name: 'Glucose Level',
+                value: `${currentMetrics.glucoseLevel} mg/dL`,
+                status: getGlucoseStatus(currentMetrics.glucoseLevel),
+                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
+                icon: BeakerIcon,
+                color: getStatusColor(getGlucoseStatus(currentMetrics.glucoseLevel)),
+              });
+            }
+            
+            // Add weight if available
+            if (currentMetrics.weight && currentMetrics.height) {
+              const bmi = calculateBMI(currentMetrics.weight, currentMetrics.height);
+              metrics.push({
+                id: 4,
+                name: 'Weight & BMI',
+                value: `${currentMetrics.weight} kg (BMI: ${bmi.toFixed(1)})`,
+                status: getBMIStatus(bmi),
+                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
+                icon: UserIcon,
+                color: getStatusColor(getBMIStatus(bmi)),
+              });
+            } else if (currentMetrics.weight) {
+              metrics.push({
+                id: 4,
+                name: 'Weight',
+                value: `${currentMetrics.weight} kg`,
+                status: 'info',
+                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
+                icon: UserIcon,
+                color: 'text-blue-500',
+              });
+            }
+          } else {
+            // Fallback to user data if API doesn't return metrics
+            // Add blood pressure if available
+            if (userData.bloodPressure) {
+              metrics.push({
+                id: 1,
+                name: 'Blood Pressure',
+                value: userData.bloodPressure,
+                status: getBPStatus(userData.bloodPressure),
+                date: userData.lastMetricsUpdate || 'Not updated',
+                icon: HeartIcon,
+                color: getStatusColor(getBPStatus(userData.bloodPressure)),
+              });
+            }
+            
+            // Add heart rate if available
+            if (userData.heartRate) {
+              metrics.push({
+                id: 2,
+                name: 'Heart Rate',
+                value: `${userData.heartRate} bpm`,
+                status: getHeartRateStatus(userData.heartRate),
+                date: userData.lastMetricsUpdate || 'Not updated',
+                icon: HeartIcon,
+                color: getStatusColor(getHeartRateStatus(userData.heartRate)),
+              });
+            }
+            
+            // Add glucose level if available
+            if (userData.glucoseLevel) {
+              metrics.push({
+                id: 3,
+                name: 'Glucose Level',
+                value: `${userData.glucoseLevel} mg/dL`,
+                status: getGlucoseStatus(userData.glucoseLevel),
+                date: userData.lastMetricsUpdate || 'Not updated',
+                icon: BeakerIcon,
+                color: getStatusColor(getGlucoseStatus(userData.glucoseLevel)),
+              });
+            }
+            
+            // Add weight if available
+            if (userData.weight && userData.height) {
+              const bmi = calculateBMI(userData.weight, userData.height);
+              metrics.push({
+                id: 4,
+                name: 'Weight & BMI',
+                value: `${userData.weight} kg (BMI: ${bmi.toFixed(1)})`,
+                status: getBMIStatus(bmi),
+                date: userData.lastMetricsUpdate || 'Not updated',
+                icon: UserIcon,
+                color: getStatusColor(getBMIStatus(bmi)),
+              });
+            } else if (userData.weight) {
+              metrics.push({
+                id: 4,
+                name: 'Weight',
+                value: `${userData.weight} kg`,
+                status: 'info',
+                date: userData.lastMetricsUpdate || 'Not updated',
+                icon: UserIcon,
+                color: 'text-blue-500',
+              });
+            }
+          }
+          
+          setHealthMetrics(metrics);
+          
+          // Set upcoming appointments (filter out cancelled ones)
+          setUpcomingAppointments(appointmentsData.filter(apt => apt.status === 'upcoming') || []);
+          
+          // Load reports if any (keep as is for now)
+          setRecentReports(userData.reports || []);
+        } catch (error) {
+          console.error('Error fetching patient data:', error);
+          // If API calls fail, we already have the fallback to localStorage above
+        } finally {
+          setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
-      
-      // Initialize health metrics from user data or empty array
-      const metrics = [];
-      
-      // Add blood pressure if available
-      if (userData.bloodPressure) {
-        metrics.push({
-          id: 1,
-          name: 'Blood Pressure',
-          value: userData.bloodPressure,
-          status: getBPStatus(userData.bloodPressure),
-          date: userData.lastMetricsUpdate || 'Not updated',
-          icon: HeartIcon,
-          color: getStatusColor(getBPStatus(userData.bloodPressure)),
-        });
-      }
-      
-      // Add heart rate if available
-      if (userData.heartRate) {
-        metrics.push({
-          id: 2,
-          name: 'Heart Rate',
-          value: `${userData.heartRate} bpm`,
-          status: getHeartRateStatus(userData.heartRate),
-          date: userData.lastMetricsUpdate || 'Not updated',
-          icon: HeartIcon,
-          color: getStatusColor(getHeartRateStatus(userData.heartRate)),
-        });
-      }
-      
-      // Add glucose level if available
-      if (userData.glucoseLevel) {
-        metrics.push({
-          id: 3,
-          name: 'Glucose Level',
-          value: `${userData.glucoseLevel} mg/dL`,
-          status: getGlucoseStatus(userData.glucoseLevel),
-          date: userData.lastMetricsUpdate || 'Not updated',
-          icon: BeakerIcon,
-          color: getStatusColor(getGlucoseStatus(userData.glucoseLevel)),
-        });
-      }
-      
-      // Add weight if available
-      if (userData.weight && userData.height) {
-        const bmi = calculateBMI(userData.weight, userData.height);
-        metrics.push({
-          id: 4,
-          name: 'Weight & BMI',
-          value: `${userData.weight} kg (BMI: ${bmi.toFixed(1)})`,
-          status: getBMIStatus(bmi),
-          date: userData.lastMetricsUpdate || 'Not updated',
-          icon: UserIcon,
-          color: getStatusColor(getBMIStatus(bmi)),
-        });
-      } else if (userData.weight) {
-        metrics.push({
-          id: 4,
-          name: 'Weight',
-          value: `${userData.weight} kg`,
-          status: 'info',
-          date: userData.lastMetricsUpdate || 'Not updated',
-          icon: UserIcon,
-          color: 'text-blue-500',
-        });
-      }
-      
-      setHealthMetrics(metrics);
-      
-      // Load appointments if any
-      setUpcomingAppointments(userData.appointments?.filter(apt => apt.status === 'upcoming') || []);
-      
-      // Load reports if any
-      setRecentReports(userData.reports || []);
-    }
+    };
     
-    setLoading(false);
+    fetchUserData();
   }, [user]);
   
   // Helper functions for determining health status

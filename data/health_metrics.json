@@ -1,0 +1,26 @@
+{
+  "patient-1744614196275": {
+    "history": [
+      {
+        "height": "187",
+        "weight": "75",
+        "bloodPressure": "110/70",
+        "heartRate": "100",
+        "glucoseLevel": "90",
+        "bmi": "21.4",
+        "bmiStatus": "Normal weight",
+        "timestamp": "2025-04-14T07:13:18.225Z"
+      }
+    ],
+    "current": {
+      "height": "187",
+      "weight": "75",
+      "bloodPressure": "110/70",
+      "heartRate": "100",
+      "glucoseLevel": "90",
+      "bmi": "21.4",
+      "bmiStatus": "Normal weight",
+      "timestamp": "2025-04-14T07:13:18.225Z"
+    }
+  }
+}

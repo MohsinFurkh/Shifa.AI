@@ -35,27 +35,56 @@ export default function AppointmentsPage() {
   ];
 
   useEffect(() => {
-    // Load appointments from user profile
-    if (user) {
-      // Try to get the most up-to-date data from localStorage
-      let userData = user;
-      const storedUserData = localStorage.getItem('shifaai_user');
-      
-      if (storedUserData) {
-        try {
-          const parsedData = JSON.parse(storedUserData);
-          // Use localStorage data if it's for the current user
-          if (parsedData.email === user.email && parsedData.id === user.id) {
-            userData = parsedData;
+    // Load appointments from API
+    const fetchAppointments = async () => {
+      setLoading(true);
+      try {
+        if (user) {
+          // Fetch appointments from the server
+          const response = await fetch(`/api/patient/appointments?userId=${user.id}`);
+          
+          if (response.ok) {
+            const { data } = await response.json();
+            setAppointments(data || []);
+          } else {
+            // Fallback to localStorage if API call fails
+            let userData = user;
+            const storedUserData = localStorage.getItem('shifaai_user');
+            
+            if (storedUserData) {
+              try {
+                const parsedData = JSON.parse(storedUserData);
+                if (parsedData.email === user.email && parsedData.id === user.id) {
+                  userData = parsedData;
+                }
+              } catch (e) {
+                console.error("Error parsing stored user data", e);
+              }
+            }
+            
+            setAppointments(userData.appointments || []);
           }
-        } catch (e) {
-          console.error("Error parsing stored user data", e);
         }
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+        // Fallback to localStorage
+        if (user) {
+          const storedUserData = localStorage.getItem('shifaai_user');
+          if (storedUserData) {
+            try {
+              const userData = JSON.parse(storedUserData);
+              setAppointments(userData.appointments || []);
+            } catch (e) {
+              console.error("Error parsing stored user data", e);
+            }
+          }
+        }
+      } finally {
+        setLoading(false);
       }
-      
-      setAppointments(userData.appointments || []);
-    }
-    setLoading(false);
+    };
+    
+    fetchAppointments();
   }, [user]);
 
   const handleChange = (e) => {
@@ -74,42 +103,63 @@ export default function AppointmentsPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Get doctor details
-    const selectedDoctor = sampleDoctors.find(doc => doc.id === parseInt(formData.doctorId));
+    try {
+      // Get doctor details
+      const selectedDoctor = sampleDoctors.find(doc => doc.id === parseInt(formData.doctorId));
 
-    // Create new appointment
-    const newAppointment = {
-      id: Date.now(), // Use timestamp as ID
-      doctor: selectedDoctor.name,
-      specialty: selectedDoctor.specialty,
-      date: formData.date,
-      time: formData.time,
-      status: 'upcoming',
-      reason: formData.reason,
-    };
+      // Create new appointment data
+      const appointmentData = {
+        patientId: user.id,
+        patientName: user.name,
+        doctorName: selectedDoctor.name,
+        doctorSpecialty: selectedDoctor.specialty,
+        date: formData.date,
+        time: formData.time,
+        status: 'upcoming',
+        reason: formData.reason,
+        createdAt: new Date().toISOString()
+      };
 
-    // Update local state
-    const updatedAppointments = [...appointments, newAppointment];
-    setAppointments(updatedAppointments);
-    
-    // Save to user profile
-    updateProfile({ appointments: updatedAppointments });
+      // Save appointment to server
+      const response = await fetch('/api/patient/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointmentData),
+      });
 
-    // Reset form
-    setTimeout(() => {
+      if (!response.ok) {
+        throw new Error('Failed to book appointment');
+      }
+
+      const { data: newAppointment } = await response.json();
+
+      // Update local state
+      setAppointments(prev => [...prev, newAppointment]);
+      
+      // Also update in user profile for backward compatibility
+      const updatedAppointments = [...appointments, newAppointment];
+      updateProfile({ appointments: updatedAppointments });
+
+      // Reset form
       setShowBookingForm(false);
-      setLoading(false);
       setFormData({
         doctorId: '',
         date: '',
         time: '',
         reason: '',
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Error booking appointment:', error);
+      // Handle error (show message to user)
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelAppointment = (appointment) => {
@@ -126,45 +176,90 @@ export default function AppointmentsPage() {
     setShowRescheduleModal(true);
   };
 
-  const confirmCancelAppointment = () => {
+  const confirmCancelAppointment = async () => {
     setLoading(true);
     
-    // Update appointment status to cancelled
-    const updatedAppointments = appointments.map(app => 
-      app.id === selectedAppointment.id 
-        ? { ...app, status: 'cancelled' } 
-        : app
-    );
-    
-    // Update state and save to profile
-    setAppointments(updatedAppointments);
-    updateProfile({ appointments: updatedAppointments });
-    
-    setTimeout(() => {
+    try {
+      // Update appointment status via API
+      const response = await fetch('/api/patient/appointments', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          appointmentId: selectedAppointment.id,
+          status: 'cancelled',
+          updatedAt: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel appointment');
+      }
+
+      const { data: updatedAppointment } = await response.json();
+      
+      // Update local state
+      const updatedAppointments = appointments.map(app => 
+        app.id === selectedAppointment.id ? updatedAppointment : app
+      );
+      
+      setAppointments(updatedAppointments);
+      
+      // Also update in user profile for backward compatibility
+      updateProfile({ appointments: updatedAppointments });
+      
       setShowCancelModal(false);
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      // Handle error (show message to user)
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
-  const confirmRescheduleAppointment = (e) => {
+  const confirmRescheduleAppointment = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    // Update appointment with new date and time
-    const updatedAppointments = appointments.map(app => 
-      app.id === selectedAppointment.id 
-        ? { ...app, date: rescheduleData.date, time: rescheduleData.time } 
-        : app
-    );
-    
-    // Update state and save to profile
-    setAppointments(updatedAppointments);
-    updateProfile({ appointments: updatedAppointments });
-    
-    setTimeout(() => {
+    try {
+      // Update appointment with new date and time via API
+      const response = await fetch('/api/patient/appointments', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          appointmentId: selectedAppointment.id,
+          date: rescheduleData.date,
+          time: rescheduleData.time,
+          updatedAt: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reschedule appointment');
+      }
+
+      const { data: updatedAppointment } = await response.json();
+      
+      // Update local state
+      const updatedAppointments = appointments.map(app => 
+        app.id === selectedAppointment.id ? updatedAppointment : app
+      );
+      
+      setAppointments(updatedAppointments);
+      
+      // Also update in user profile for backward compatibility
+      updateProfile({ appointments: updatedAppointments });
+      
       setShowRescheduleModal(false);
+    } catch (error) {
+      console.error('Error rescheduling appointment:', error);
+      // Handle error (show message to user)
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   // Filter appointments based on active tab

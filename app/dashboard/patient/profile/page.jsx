@@ -45,7 +45,7 @@ export default function PatientProfilePage() {
         }
       }
       
-      // Set form data from user data
+      // Set initial form data from user data
       setFormData({
         name: userData.name || '',
         email: userData.email || '',
@@ -62,6 +62,34 @@ export default function PatientProfilePage() {
         heartRate: userData.heartRate || '',
         glucoseLevel: userData.glucoseLevel || '',
       });
+      
+      // Fetch the latest health metrics from the API
+      const fetchHealthMetrics = async () => {
+        try {
+          const response = await fetch(`/api/patient/get-health-metrics?userId=${userData.id}`);
+          
+          if (response.ok) {
+            const { data } = await response.json();
+            
+            if (data && data.current) {
+              // Update form data with the latest metrics
+              setFormData(prev => ({
+                ...prev,
+                height: data.current.height || prev.height,
+                weight: data.current.weight || prev.weight,
+                bloodPressure: data.current.bloodPressure || prev.bloodPressure,
+                heartRate: data.current.heartRate || prev.heartRate,
+                glucoseLevel: data.current.glucoseLevel || prev.glucoseLevel,
+                lastMetricsUpdate: data.current.timestamp
+              }));
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching health metrics:', error);
+        }
+      };
+      
+      fetchHealthMetrics();
     }
   }, [user]);
 
@@ -73,22 +101,66 @@ export default function PatientProfilePage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    // Add timestamp for last update of health metrics
-    const updatedData = {
-      ...formData,
-      lastMetricsUpdate: new Date().toISOString()
-    };
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      updateProfile(updatedData);
+    try {
+      // First, update the user profile in localStorage
+      const profileUpdated = updateProfile({
+        name: formData.name,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        bloodType: formData.bloodType,
+        allergies: formData.allergies,
+        medicalConditions: formData.medicalConditions,
+        medications: formData.medications,
+        // Include basic health metrics in the user profile
+        height: formData.height,
+        weight: formData.weight,
+        bloodPressure: formData.bloodPressure,
+        heartRate: formData.heartRate,
+        glucoseLevel: formData.glucoseLevel,
+        lastMetricsUpdate: new Date().toISOString()
+      });
+      
+      if (profileUpdated && user) {
+        // Extract health metrics for the dedicated health metrics API
+        const healthMetrics = {
+          height: formData.height,
+          weight: formData.weight,
+          bloodPressure: formData.bloodPressure,
+          heartRate: formData.heartRate,
+          glucoseLevel: formData.glucoseLevel,
+          bmi: calculateBMI(),
+          bmiStatus: bmi ? getBMIStatus(Number(bmi)) : null
+        };
+        
+        // Save health metrics to the dedicated API endpoint
+        const response = await fetch('/api/patient/update-health-metrics', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            metrics: healthMetrics
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update health metrics');
+        }
+      }
+      
       setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile and metrics:', error);
+      // You could add error handling UI here
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   // Calculate BMI if height and weight are provided
