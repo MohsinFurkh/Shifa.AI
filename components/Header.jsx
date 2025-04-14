@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -47,9 +48,16 @@ export default function Header() {
         <div className="flex lg:flex-1">
           <Link 
             href={user ? `/dashboard/${user.type}` : "/"} 
-            className="-m-1.5 p-1.5 text-2xl font-bold text-primary-600"
+            className="-m-1.5 p-1.5 flex items-center"
           >
-            ShifaAI
+            <Image
+              src="/images/ShifaAILogo.png"
+              alt="ShifaAI Logo"
+              width={140}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
           </Link>
         </div>
         <div className="flex lg:hidden">
@@ -113,8 +121,15 @@ export default function Header() {
         <div className="fixed inset-0 z-50"></div>
         <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
-            <Link href="#" className="-m-1.5 p-1.5 text-2xl font-bold text-primary-600">
-              ShifaAI
+            <Link href="#" className="-m-1.5 p-1.5">
+              <Image
+                src="/images/ShifaAILogo.png"
+                alt="ShifaAI Logo"
+                width={120}
+                height={35}
+                className="h-8 w-auto"
+                priority
+              />
             </Link>
             <button
               type="button"

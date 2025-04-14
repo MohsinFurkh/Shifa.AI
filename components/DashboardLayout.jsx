@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -98,7 +99,14 @@ export default function DashboardLayout({ children }) {
             </div>
 
             <div className="flex flex-shrink-0 items-center px-4">
-              <span className="text-2xl font-bold text-primary-600">ShifaAI</span>
+              <Image
+                src="/images/ShifaAILogo.png"
+                alt="ShifaAI Logo"
+                width={120}
+                height={35}
+                className="h-8 w-auto"
+                priority
+              />
             </div>
             <div className="mt-5 h-0 flex-1 overflow-y-auto">
               <nav className="space-y-1 px-2">
@@ -133,7 +141,16 @@ export default function DashboardLayout({ children }) {
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
           <div className="flex h-16 shrink-0 items-center">
-            <Link href={`/dashboard/${userType}`} className="text-2xl font-bold text-primary-600">ShifaAI</Link>
+            <Link href={`/dashboard/${userType}`}>
+              <Image
+                src="/images/ShifaAILogo.png"
+                alt="ShifaAI Logo"
+                width={140}
+                height={40}
+                className="h-10 w-auto"
+                priority
+              />
+            </Link>
           </div>
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
