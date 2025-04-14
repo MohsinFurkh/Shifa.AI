@@ -53,9 +53,9 @@ export default function Header() {
             <Image
               src="/images/ShifaAILogo.png"
               alt="ShifaAI Logo"
-              width={140}
-              height={40}
-              className="h-10 w-auto"
+              width={200}
+              height={60}
+              className="h-14 w-auto"
               priority
             />
           </Link>
@@ -125,9 +125,9 @@ export default function Header() {
               <Image
                 src="/images/ShifaAILogo.png"
                 alt="ShifaAI Logo"
-                width={120}
-                height={35}
-                className="h-8 w-auto"
+                width={180}
+                height={50}
+                className="h-12 w-auto"
                 priority
               />
             </Link>

@@ -13,7 +13,7 @@ import {
   ChatBubbleLeftRightIcon,
   DocumentTextIcon,
   ChartBarIcon,
-  ArrowLeftOnRectangleIcon,
+  ArrowRightStartOnRectangleIcon,
   ClipboardDocumentListIcon,
   UserGroupIcon,
   CogIcon,
@@ -102,9 +102,9 @@ export default function DashboardLayout({ children }) {
               <Image
                 src="/images/ShifaAILogo.png"
                 alt="ShifaAI Logo"
-                width={120}
-                height={35}
-                className="h-8 w-auto"
+                width={180}
+                height={50}
+                className="h-12 w-auto"
                 priority
               />
             </div>
@@ -128,7 +128,7 @@ export default function DashboardLayout({ children }) {
                   }}
                   className="group flex w-full items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 >
-                  <ArrowLeftOnRectangleIcon className="mr-4 h-6 w-6 flex-shrink-0 text-gray-400 group-hover:text-gray-500" />
+                  <ArrowRightStartOnRectangleIcon className="mr-4 h-6 w-6 flex-shrink-0 text-gray-400 group-hover:text-gray-500" />
                   Logout
                 </button>
               </nav>
@@ -145,9 +145,9 @@ export default function DashboardLayout({ children }) {
               <Image
                 src="/images/ShifaAILogo.png"
                 alt="ShifaAI Logo"
-                width={140}
-                height={40}
-                className="h-10 w-auto"
+                width={200}
+                height={60}
+                className="h-14 w-auto"
                 priority
               />
             </Link>
@@ -174,7 +174,7 @@ export default function DashboardLayout({ children }) {
                   onClick={logout}
                   className="group -mx-2 flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                 >
-                  <ArrowLeftOnRectangleIcon className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-primary-600" />
+                  <ArrowRightStartOnRectangleIcon className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-primary-600" />
                   Logout
                 </button>
               </li>
