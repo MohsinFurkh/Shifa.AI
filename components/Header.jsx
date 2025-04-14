@@ -7,7 +7,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  // Add a fallback if useAuth() is not available
+  const auth = useAuth() || { user: null, logout: () => {} };
+  const { user, logout } = auth;
 
   // Define different navigation options based on user type
   const getNavigation = () => {
