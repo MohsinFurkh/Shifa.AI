@@ -60,9 +60,47 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Save user data with token
+    // Check if we have existing stored data for this user to preserve
+    let existingUserData = {};
+    const storedUser = localStorage.getItem('shifaai_user');
+    
+    if (storedUser) {
+      try {
+        const parsedData = JSON.parse(storedUser);
+        // Only use stored data if it's for the same user
+        if (parsedData.email === userData.email && 
+            (parsedData.id === userData.id || parsedData._id === userData._id)) {
+          // Extract health metrics and other data we want to preserve
+          const { 
+            bloodPressure, heartRate, glucoseLevel, weight, height,
+            lastMetricsUpdate, healthHistory, appointments, reports,
+            medications, allergies
+          } = parsedData;
+          
+          // Add these properties to our object if they exist
+          existingUserData = {
+            ...(bloodPressure && { bloodPressure }),
+            ...(heartRate && { heartRate }),
+            ...(glucoseLevel && { glucoseLevel }),
+            ...(weight && { weight }),
+            ...(height && { height }),
+            ...(lastMetricsUpdate && { lastMetricsUpdate }),
+            ...(healthHistory && { healthHistory }),
+            ...(appointments && { appointments }),
+            ...(reports && { reports }),
+            ...(medications && { medications }),
+            ...(allergies && { allergies })
+          };
+        }
+      } catch (e) {
+        console.error("Error parsing stored user data during login", e);
+      }
+    }
+    
+    // Save user data with token, preserving existing health data
     const userWithToken = {
-      ...userData
+      ...userData,
+      ...existingUserData  // Merge existing data with new login data
     };
     
     setUser(userWithToken);
