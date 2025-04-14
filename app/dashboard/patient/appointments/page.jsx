@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
-import { CalendarDaysIcon, ClockIcon, UserIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CalendarDaysIcon, ClockIcon, UserIcon, XMarkIcon, ArrowPathIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function AppointmentsPage() {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [appointments, setAppointments] = useState([]);
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     doctorId: '',
     date: '',
@@ -34,40 +34,13 @@ export default function AppointmentsPage() {
     { id: 5, name: 'Dr. Fatima Zaidi', specialty: 'Neurologist' },
   ];
 
-  const sampleAppointments = [
-    {
-      id: 1,
-      doctor: 'Dr. Sarah Ahmed',
-      specialty: 'General Physician',
-      date: '2023-07-15',
-      time: '10:00 AM',
-      status: 'upcoming',
-      reason: 'Annual check-up',
-    },
-    {
-      id: 2,
-      doctor: 'Dr. Khalid Khan',
-      specialty: 'Cardiologist',
-      date: '2023-06-30',
-      time: '02:30 PM',
-      status: 'past',
-      reason: 'Heart palpitations',
-    },
-    {
-      id: 3,
-      doctor: 'Dr. Ayesha Malik',
-      specialty: 'Dermatologist',
-      date: '2023-06-22',
-      time: '11:15 AM',
-      status: 'past',
-      reason: 'Skin rash',
-    },
-  ];
-
   useEffect(() => {
-    // Simulating API fetch
-    setAppointments(sampleAppointments);
-  }, []);
+    // Load appointments from user profile
+    if (user) {
+      setAppointments(user.appointments || []);
+    }
+    setLoading(false);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -94,7 +67,7 @@ export default function AppointmentsPage() {
 
     // Create new appointment
     const newAppointment = {
-      id: appointments.length + 1,
+      id: Date.now(), // Use timestamp as ID
       doctor: selectedDoctor.name,
       specialty: selectedDoctor.specialty,
       date: formData.date,
@@ -103,9 +76,15 @@ export default function AppointmentsPage() {
       reason: formData.reason,
     };
 
-    // Simulate API call
+    // Update local state
+    const updatedAppointments = [...appointments, newAppointment];
+    setAppointments(updatedAppointments);
+    
+    // Save to user profile
+    updateProfile({ appointments: updatedAppointments });
+
+    // Reset form
     setTimeout(() => {
-      setAppointments([...appointments, newAppointment]);
       setShowBookingForm(false);
       setLoading(false);
       setFormData({
@@ -134,13 +113,18 @@ export default function AppointmentsPage() {
   const confirmCancelAppointment = () => {
     setLoading(true);
     
-    // Simulate API call
+    // Update appointment status to cancelled
+    const updatedAppointments = appointments.map(app => 
+      app.id === selectedAppointment.id 
+        ? { ...app, status: 'cancelled' } 
+        : app
+    );
+    
+    // Update state and save to profile
+    setAppointments(updatedAppointments);
+    updateProfile({ appointments: updatedAppointments });
+    
     setTimeout(() => {
-      setAppointments(appointments.map(app => 
-        app.id === selectedAppointment.id 
-          ? { ...app, status: 'cancelled' } 
-          : app
-      ));
       setShowCancelModal(false);
       setLoading(false);
     }, 1000);
@@ -150,13 +134,18 @@ export default function AppointmentsPage() {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call
+    // Update appointment with new date and time
+    const updatedAppointments = appointments.map(app => 
+      app.id === selectedAppointment.id 
+        ? { ...app, date: rescheduleData.date, time: rescheduleData.time } 
+        : app
+    );
+    
+    // Update state and save to profile
+    setAppointments(updatedAppointments);
+    updateProfile({ appointments: updatedAppointments });
+    
     setTimeout(() => {
-      setAppointments(appointments.map(app => 
-        app.id === selectedAppointment.id 
-          ? { ...app, date: rescheduleData.date, time: rescheduleData.time } 
-          : app
-      ));
       setShowRescheduleModal(false);
       setLoading(false);
     }, 1000);
@@ -185,7 +174,97 @@ export default function AppointmentsPage() {
             </button>
           </div>
 
-          {!showBookingForm ? (
+          {showBookingForm ? (
+            <div className="p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Book a New Appointment</h2>
+              <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Doctor</label>
+                    <select
+                      name="doctorId"
+                      value={formData.doctorId}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">Select a doctor</option>
+                      {sampleDoctors.map((doctor) => (
+                        <option key={doctor.id} value={doctor.id}>
+                          {doctor.name} - {doctor.specialty}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleChange}
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                    <select
+                      name="time"
+                      value={formData.time}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">Select a time</option>
+                      <option value="09:00 AM">09:00 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="01:00 PM">01:00 PM</option>
+                      <option value="02:00 PM">02:00 PM</option>
+                      <option value="03:00 PM">03:00 PM</option>
+                      <option value="04:00 PM">04:00 PM</option>
+                      <option value="05:00 PM">05:00 PM</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
+                    <textarea
+                      name="reason"
+                      value={formData.reason}
+                      onChange={handleChange}
+                      required
+                      rows="3"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="Please describe your symptoms or reason for the appointment"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowBookingForm(false)}
+                    className="mr-4 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
+                    disabled={loading}
+                  >
+                    {loading ? 'Booking...' : 'Book Appointment'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
             <div className="p-6">
               <div className="flex border-b mb-6">
                 <button
@@ -220,7 +299,12 @@ export default function AppointmentsPage() {
                 </button>
               </div>
 
-              {filteredAppointments.length > 0 ? (
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary-200 border-t-primary-600"></div>
+                  <p className="mt-2 text-gray-500">Loading appointments...</p>
+                </div>
+              ) : filteredAppointments.length > 0 ? (
                 <div className="space-y-4">
                   {filteredAppointments.map((appointment) => (
                     <div
@@ -245,18 +329,20 @@ export default function AppointmentsPage() {
                         </div>
                       </div>
                       {activeTab === 'upcoming' && (
-                        <div className="mt-4 flex justify-end">
+                        <div className="mt-4 flex justify-end space-x-2">
                           <button 
                             onClick={() => handleCancelAppointment(appointment)}
-                            className="px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition mr-2 flex items-center"
+                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:text-gray-800 active:bg-gray-50 transition ease-in-out duration-150"
                           >
-                            <XMarkIcon className="h-4 w-4 mr-1" /> Cancel
+                            <XMarkIcon className="h-4 w-4 mr-1" />
+                            Cancel
                           </button>
                           <button 
                             onClick={() => handleRescheduleAppointment(appointment)}
-                            className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition flex items-center"
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-500 focus:outline-none focus:border-primary-700 focus:shadow-outline-primary active:bg-primary-700 transition ease-in-out duration-150"
                           >
-                            <ArrowPathIcon className="h-4 w-4 mr-1" /> Reschedule
+                            <ArrowPathIcon className="h-4 w-4 mr-1" />
+                            Reschedule
                           </button>
                         </div>
                       )}
@@ -264,100 +350,29 @@ export default function AppointmentsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No {activeTab} appointments found.</p>
+                <div className="py-12 text-center">
+                  <ExclamationCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-lg font-medium text-gray-900">No appointments found</h3>
+                  <p className="mt-1 text-gray-500">
+                    {activeTab === 'upcoming' 
+                      ? "You don't have any upcoming appointments scheduled." 
+                      : activeTab === 'past' 
+                        ? "You don't have any past appointments." 
+                        : "You don't have any cancelled appointments."}
+                  </p>
+                  {activeTab === 'upcoming' && (
+                    <div className="mt-6">
+                      <button
+                        onClick={() => setShowBookingForm(true)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        <CalendarDaysIcon className="h-5 w-5 mr-2" />
+                        Book New Appointment
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Book New Appointment</h2>
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Doctor
-                    </label>
-                    <select
-                      name="doctorId"
-                      value={formData.doctorId}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    >
-                      <option value="">Select a doctor</option>
-                      {sampleDoctors.map((doctor) => (
-                        <option key={doctor.id} value={doctor.id}>
-                          {doctor.name} - {doctor.specialty}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Date
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Time
-                    </label>
-                    <select
-                      name="time"
-                      value={formData.time}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    >
-                      <option value="">Select a time</option>
-                      <option value="09:00 AM">09:00 AM</option>
-                      <option value="10:00 AM">10:00 AM</option>
-                      <option value="11:00 AM">11:00 AM</option>
-                      <option value="12:00 PM">12:00 PM</option>
-                      <option value="02:00 PM">02:00 PM</option>
-                      <option value="03:00 PM">03:00 PM</option>
-                      <option value="04:00 PM">04:00 PM</option>
-                      <option value="05:00 PM">05:00 PM</option>
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Reason for Visit
-                    </label>
-                    <textarea
-                      name="reason"
-                      value={formData.reason}
-                      onChange={handleChange}
-                      rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="Briefly describe your symptoms or reason for the appointment"
-                      required
-                    ></textarea>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full px-4 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition disabled:bg-gray-400"
-                  >
-                    {loading ? 'Scheduling...' : 'Schedule Appointment'}
-                  </button>
-                </div>
-              </form>
             </div>
           )}
         </div>
@@ -365,25 +380,26 @@ export default function AppointmentsPage() {
 
       {/* Cancel Appointment Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Cancel Appointment</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to cancel your appointment with {selectedAppointment.doctor} on {new Date(selectedAppointment.date).toLocaleDateString()} at {selectedAppointment.time}?
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Cancel Appointment</h3>
+            <p className="text-gray-500 mb-4">
+              Are you sure you want to cancel your appointment with {selectedAppointment.doctor} on{' '}
+              {new Date(selectedAppointment.date).toLocaleDateString()} at {selectedAppointment.time}?
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 No, Keep It
               </button>
               <button
                 onClick={confirmCancelAppointment}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                 disabled={loading}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:bg-gray-400"
               >
-                {loading ? 'Cancelling...' : 'Yes, Cancel Appointment'}
+                {loading ? 'Cancelling...' : 'Yes, Cancel'}
               </button>
             </div>
           </div>
@@ -391,45 +407,42 @@ export default function AppointmentsPage() {
       )}
 
       {/* Reschedule Appointment Modal */}
-      {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {showRescheduleModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Reschedule Appointment</h3>
-            <p className="text-gray-600 mb-4">
-              Reschedule your appointment with {selectedAppointment.doctor}
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Reschedule Appointment</h3>
+            <p className="text-gray-500 mb-4">
+              Please select a new date and time for your appointment with {selectedAppointment.doctor}.
             </p>
             <form onSubmit={confirmRescheduleAppointment}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    New Date
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">New Date</label>
                   <input
                     type="date"
                     name="date"
                     value={rescheduleData.date}
                     onChange={handleRescheduleChange}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    New Time
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">New Time</label>
                   <select
                     name="time"
                     value={rescheduleData.time}
                     onChange={handleRescheduleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">Select a time</option>
                     <option value="09:00 AM">09:00 AM</option>
                     <option value="10:00 AM">10:00 AM</option>
                     <option value="11:00 AM">11:00 AM</option>
                     <option value="12:00 PM">12:00 PM</option>
+                    <option value="01:00 PM">01:00 PM</option>
                     <option value="02:00 PM">02:00 PM</option>
                     <option value="03:00 PM">03:00 PM</option>
                     <option value="04:00 PM">04:00 PM</option>
@@ -441,14 +454,14 @@ export default function AppointmentsPage() {
                 <button
                   type="button"
                   onClick={() => setShowRescheduleModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
                   disabled={loading}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition disabled:bg-gray-400"
                 >
                   {loading ? 'Rescheduling...' : 'Confirm Reschedule'}
                 </button>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
-import { UserIcon } from '@heroicons/react/24/outline';
+import { UserIcon, HeartIcon, BeakerIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 
 export default function PatientProfilePage() {
   const { user, updateProfile } = useAuth();
@@ -19,6 +19,12 @@ export default function PatientProfilePage() {
     allergies: '',
     medicalConditions: '',
     medications: '',
+    // New health metrics fields
+    height: '',
+    weight: '',
+    bloodPressure: '',
+    heartRate: '',
+    glucoseLevel: '',
   });
 
   useEffect(() => {
@@ -33,6 +39,12 @@ export default function PatientProfilePage() {
         allergies: user.allergies || '',
         medicalConditions: user.medicalConditions || '',
         medications: user.medications || '',
+        // New health metrics fields
+        height: user.height || '',
+        weight: user.weight || '',
+        bloodPressure: user.bloodPressure || '',
+        heartRate: user.heartRate || '',
+        glucoseLevel: user.glucoseLevel || '',
       });
     }
   }, [user]);
@@ -49,13 +61,42 @@ export default function PatientProfilePage() {
     e.preventDefault();
     setLoading(true);
     
+    // Add timestamp for last update of health metrics
+    const updatedData = {
+      ...formData,
+      lastMetricsUpdate: new Date().toISOString()
+    };
+    
     // Simulate API call delay
     setTimeout(() => {
-      updateProfile(formData);
+      updateProfile(updatedData);
       setIsEditing(false);
       setLoading(false);
     }, 500);
   };
+
+  // Calculate BMI if height and weight are provided
+  const calculateBMI = () => {
+    if (formData.height && formData.weight) {
+      const heightInMeters = Number(formData.height) / 100;
+      const weightInKg = Number(formData.weight);
+      const bmi = weightInKg / (heightInMeters * heightInMeters);
+      return bmi.toFixed(1);
+    }
+    return null;
+  };
+
+  // Get BMI status
+  const getBMIStatus = (bmi) => {
+    if (bmi < 18.5) return 'Underweight';
+    if (bmi >= 18.5 && bmi < 25) return 'Normal weight';
+    if (bmi >= 25 && bmi < 30) return 'Overweight';
+    return 'Obese';
+  };
+
+  // Calculate BMI and status
+  const bmi = calculateBMI();
+  const bmiStatus = bmi ? getBMIStatus(Number(bmi)) : null;
 
   if (!user) {
     return null;
@@ -93,121 +134,209 @@ export default function PatientProfilePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
+                <div className="border-b border-gray-200 pb-6 mb-6">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      readOnly
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        readOnly
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                    <input
-                      type="date"
-                      name="dateOfBirth"
-                      value={formData.dateOfBirth}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                      <input
+                        type="date"
+                        name="dateOfBirth"
+                        value={formData.dateOfBirth}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Blood Type</label>
-                    <select
-                      name="bloodType"
-                      value={formData.bloodType}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    >
-                      <option value="">Select Blood Type</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                    </select>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Blood Type</label>
+                      <select
+                        name="bloodType"
+                        value={formData.bloodType}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="">Select Blood Type</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Allergies</label>
-                    <textarea
-                      name="allergies"
-                      value={formData.allergies}
-                      onChange={handleChange}
-                      rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="List any allergies you have"
-                    ></textarea>
+                <div className="border-b border-gray-200 pb-6 mb-6">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">
+                    <div className="flex items-center">
+                      <HeartIcon className="h-5 w-5 text-primary-600 mr-2" />
+                      Health Metrics
+                    </div>
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                      <input
+                        type="number"
+                        name="height"
+                        value={formData.height}
+                        onChange={handleChange}
+                        placeholder="Enter your height in centimeters"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                      <input
+                        type="number"
+                        name="weight"
+                        value={formData.weight}
+                        onChange={handleChange}
+                        placeholder="Enter your weight in kilograms"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+
+                    {formData.height && formData.weight && (
+                      <div className="md:col-span-2">
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <p className="text-sm text-gray-500">
+                            BMI: <span className="font-medium">{bmi}</span> - {bmiStatus}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Blood Pressure (systolic/diastolic)</label>
+                      <input
+                        type="text"
+                        name="bloodPressure"
+                        value={formData.bloodPressure}
+                        onChange={handleChange}
+                        placeholder="e.g., 120/80"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Heart Rate (bpm)</label>
+                      <input
+                        type="number"
+                        name="heartRate"
+                        value={formData.heartRate}
+                        onChange={handleChange}
+                        placeholder="Beats per minute"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Glucose Level (mg/dL)</label>
+                      <input
+                        type="number"
+                        name="glucoseLevel"
+                        value={formData.glucoseLevel}
+                        onChange={handleChange}
+                        placeholder="Blood glucose level"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
                   </div>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Medical Conditions</label>
-                    <textarea
-                      name="medicalConditions"
-                      value={formData.medicalConditions}
-                      onChange={handleChange}
-                      rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="List any medical conditions you have"
-                    ></textarea>
-                  </div>
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Medical History</h2>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Allergies</label>
+                      <textarea
+                        name="allergies"
+                        value={formData.allergies}
+                        onChange={handleChange}
+                        rows="3"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="List any allergies you have"
+                      ></textarea>
+                    </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Medications</label>
-                    <textarea
-                      name="medications"
-                      value={formData.medications}
-                      onChange={handleChange}
-                      rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="List any medications you are currently taking"
-                    ></textarea>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Medical Conditions</label>
+                      <textarea
+                        name="medicalConditions"
+                        value={formData.medicalConditions}
+                        onChange={handleChange}
+                        rows="3"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="List any medical conditions you have"
+                      ></textarea>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Medications</label>
+                      <textarea
+                        name="medications"
+                        value={formData.medications}
+                        onChange={handleChange}
+                        rows="3"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="List any medications you are currently taking"
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
 
@@ -229,50 +358,130 @@ export default function PatientProfilePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Full Name</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.name || 'Not provided'}</p>
-                  </div>
+                <div className="border-b border-gray-200 pb-6 mb-6">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Full Name</h3>
+                      <p className="mt-1 text-sm text-gray-900">{formData.name || 'Not provided'}</p>
+                    </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.email}</p>
-                  </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                      <p className="mt-1 text-sm text-gray-900">{formData.email}</p>
+                    </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Phone Number</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.phone || 'Not provided'}</p>
-                  </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Phone Number</h3>
+                      <p className="mt-1 text-sm text-gray-900">{formData.phone || 'Not provided'}</p>
+                    </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Date of Birth</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.dateOfBirth || 'Not provided'}</p>
-                  </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Date of Birth</h3>
+                      <p className="mt-1 text-sm text-gray-900">{formData.dateOfBirth || 'Not provided'}</p>
+                    </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Gender</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.gender ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) : 'Not provided'}</p>
-                  </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Gender</h3>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {formData.gender 
+                          ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) 
+                          : 'Not provided'}
+                      </p>
+                    </div>
 
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Blood Type</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.bloodType || 'Not provided'}</p>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Blood Type</h3>
+                      <p className="mt-1 text-sm text-gray-900">{formData.bloodType || 'Not provided'}</p>
+                    </div>
                   </div>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <h3 className="text-sm font-medium text-gray-500">Allergies</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.allergies || 'None'}</p>
+                <div className="border-b border-gray-200 pb-6 mb-6">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">
+                    <div className="flex items-center">
+                      <HeartIcon className="h-5 w-5 text-primary-600 mr-2" />
+                      Health Metrics
+                    </div>
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Height</h3>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {formData.height ? `${formData.height} cm` : 'Not provided'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Weight</h3>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {formData.weight ? `${formData.weight} kg` : 'Not provided'}
+                      </p>
+                    </div>
+
+                    {bmi && (
+                      <div className="md:col-span-2">
+                        <h3 className="text-sm font-medium text-gray-500">BMI</h3>
+                        <p className="mt-1 text-sm text-gray-900">
+                          {bmi} - {bmiStatus}
+                        </p>
+                      </div>
+                    )}
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Blood Pressure</h3>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {formData.bloodPressure || 'Not provided'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Heart Rate</h3>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {formData.heartRate ? `${formData.heartRate} bpm` : 'Not provided'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Glucose Level</h3>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {formData.glucoseLevel ? `${formData.glucoseLevel} mg/dL` : 'Not provided'}
+                      </p>
+                    </div>
+
+                    {user.lastMetricsUpdate && (
+                      <div className="md:col-span-2">
+                        <p className="text-xs text-gray-500">
+                          Last updated: {new Date(user.lastMetricsUpdate).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
                   </div>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <h3 className="text-sm font-medium text-gray-500">Medical Conditions</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.medicalConditions || 'None'}</p>
-                  </div>
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Medical History</h2>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Allergies</h3>
+                      <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">
+                        {formData.allergies || 'None reported'}
+                      </p>
+                    </div>
 
-                  <div className="md:col-span-2">
-                    <h3 className="text-sm font-medium text-gray-500">Current Medications</h3>
-                    <p className="mt-1 text-sm text-gray-900">{formData.medications || 'None'}</p>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Medical Conditions</h3>
+                      <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">
+                        {formData.medicalConditions || 'None reported'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Current Medications</h3>
+                      <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">
+                        {formData.medications || 'None reported'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

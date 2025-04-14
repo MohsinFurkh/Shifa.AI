@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -15,21 +15,12 @@ import {
   ChatBubbleLeftRightIcon,
   ChartBarIcon,
   UserPlusIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ExclamationCircleIcon,
+  PlusCircleIcon
 } from '@heroicons/react/24/outline';
 
-// Mock data
-const upcomingAppointments = [
-  { id: 1, doctor: 'Dr. Sarah Johnson', specialty: 'Cardiologist', date: '2023-06-15', time: '10:00 AM' },
-  { id: 2, doctor: 'Dr. Michael Lee', specialty: 'Dermatologist', date: '2023-06-20', time: '2:30 PM' },
-];
-
-const recentReports = [
-  { id: 1, name: 'Blood Test Results', date: '2023-05-28', type: 'Laboratory' },
-  { id: 2, name: 'Chest X-Ray', date: '2023-05-15', type: 'Radiology' },
-  { id: 3, name: 'Echocardiogram', date: '2023-04-30', type: 'Cardiology' },
-];
-
+// Quick action links
 const quickActions = [
   { name: 'Health Profile', href: '/dashboard/patient/profile', icon: UserIcon, color: 'bg-pink-500' },
   { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker', icon: ClipboardDocumentListIcon, color: 'bg-blue-500' },
@@ -38,45 +29,6 @@ const quickActions = [
   { name: 'Upload Report', href: '/dashboard/patient/upload-report', icon: DocumentArrowUpIcon, color: 'bg-yellow-500' },
   { name: 'My Records', href: '/dashboard/patient/records', icon: DocumentTextIcon, color: 'bg-indigo-500' },
   { name: 'My Medications', href: '/dashboard/patient/medications', icon: BeakerIcon, color: 'bg-red-500' },
-];
-
-const healthMetrics = [
-  {
-    id: 1,
-    name: 'Blood Pressure',
-    value: '120/80',
-    status: 'normal',
-    date: '2 days ago',
-    icon: HeartIcon,
-    color: 'text-green-500',
-  },
-  {
-    id: 2,
-    name: 'Heart Rate',
-    value: '72 bpm',
-    status: 'normal',
-    date: '2 days ago',
-    icon: HeartIcon,
-    color: 'text-green-500',
-  },
-  {
-    id: 3,
-    name: 'Glucose Level',
-    value: '110 mg/dL',
-    status: 'elevated',
-    date: '3 days ago',
-    icon: BeakerIcon,
-    color: 'text-yellow-500',
-  },
-  {
-    id: 4,
-    name: 'Weight',
-    value: '68 kg',
-    status: 'normal',
-    date: '1 week ago',
-    icon: UserIcon,
-    color: 'text-green-500',
-  },
 ];
 
 // Mock data for doctors by specialty
@@ -115,10 +67,144 @@ const doctorsBySpecialty = {
 
 export default function PatientDashboardContent() {
   const { user } = useAuth();
+  // Add state for health metrics, appointments, and reports
+  const [healthMetrics, setHealthMetrics] = useState([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [recentReports, setRecentReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   // Add state for doctor selection
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDoctorSelection, setShowDoctorSelection] = useState(false);
+  
+  // Effect to load user data
+  useEffect(() => {
+    if (user) {
+      // Initialize health metrics from user data or empty array
+      const metrics = [];
+      
+      // Add blood pressure if available
+      if (user.bloodPressure) {
+        metrics.push({
+          id: 1,
+          name: 'Blood Pressure',
+          value: user.bloodPressure,
+          status: getBPStatus(user.bloodPressure),
+          date: user.lastMetricsUpdate || 'Not updated',
+          icon: HeartIcon,
+          color: getStatusColor(getBPStatus(user.bloodPressure)),
+        });
+      }
+      
+      // Add heart rate if available
+      if (user.heartRate) {
+        metrics.push({
+          id: 2,
+          name: 'Heart Rate',
+          value: `${user.heartRate} bpm`,
+          status: getHeartRateStatus(user.heartRate),
+          date: user.lastMetricsUpdate || 'Not updated',
+          icon: HeartIcon,
+          color: getStatusColor(getHeartRateStatus(user.heartRate)),
+        });
+      }
+      
+      // Add glucose level if available
+      if (user.glucoseLevel) {
+        metrics.push({
+          id: 3,
+          name: 'Glucose Level',
+          value: `${user.glucoseLevel} mg/dL`,
+          status: getGlucoseStatus(user.glucoseLevel),
+          date: user.lastMetricsUpdate || 'Not updated',
+          icon: BeakerIcon,
+          color: getStatusColor(getGlucoseStatus(user.glucoseLevel)),
+        });
+      }
+      
+      // Add weight if available
+      if (user.weight && user.height) {
+        const bmi = calculateBMI(user.weight, user.height);
+        metrics.push({
+          id: 4,
+          name: 'Weight & BMI',
+          value: `${user.weight} kg (BMI: ${bmi.toFixed(1)})`,
+          status: getBMIStatus(bmi),
+          date: user.lastMetricsUpdate || 'Not updated',
+          icon: UserIcon,
+          color: getStatusColor(getBMIStatus(bmi)),
+        });
+      } else if (user.weight) {
+        metrics.push({
+          id: 4,
+          name: 'Weight',
+          value: `${user.weight} kg`,
+          status: 'info',
+          date: user.lastMetricsUpdate || 'Not updated',
+          icon: UserIcon,
+          color: 'text-blue-500',
+        });
+      }
+      
+      setHealthMetrics(metrics);
+      
+      // Load appointments if any
+      setUpcomingAppointments(user.appointments?.filter(apt => apt.status === 'upcoming') || []);
+      
+      // Load reports if any
+      setRecentReports(user.reports || []);
+    }
+    
+    setLoading(false);
+  }, [user]);
+  
+  // Helper functions for determining health status
+  function getBPStatus(bp) {
+    const [systolic, diastolic] = bp.split('/').map(Number);
+    if (systolic < 120 && diastolic < 80) return 'normal';
+    if ((systolic >= 120 && systolic <= 129) && diastolic < 80) return 'elevated';
+    return 'high';
+  }
+  
+  function getHeartRateStatus(rate) {
+    const hr = Number(rate);
+    if (hr >= 60 && hr <= 100) return 'normal';
+    if (hr < 60) return 'low';
+    return 'high';
+  }
+  
+  function getGlucoseStatus(level) {
+    const gl = Number(level);
+    if (gl < 100) return 'normal';
+    if (gl >= 100 && gl <= 125) return 'elevated';
+    return 'high';
+  }
+  
+  function calculateBMI(weightKg, heightCm) {
+    const heightM = heightCm / 100;
+    return weightKg / (heightM * heightM);
+  }
+  
+  function getBMIStatus(bmi) {
+    if (bmi < 18.5) return 'underweight';
+    if (bmi >= 18.5 && bmi < 25) return 'normal';
+    if (bmi >= 25 && bmi < 30) return 'overweight';
+    return 'obese';
+  }
+  
+  function getStatusColor(status) {
+    switch (status) {
+      case 'normal': return 'text-green-500';
+      case 'elevated': return 'text-yellow-500';
+      case 'high': return 'text-red-500';
+      case 'low': return 'text-yellow-500';
+      case 'underweight': return 'text-yellow-500';
+      case 'overweight': return 'text-yellow-500';
+      case 'obese': return 'text-red-500';
+      default: return 'text-blue-500';
+    }
+  }
   
   // Filter doctors based on search query
   const filteredDoctors = selectedSpecialty 
@@ -164,36 +250,62 @@ export default function PatientDashboardContent() {
         <div>
           <h2 className="text-lg font-medium text-gray-900 mb-4">Health Metrics</h2>
           <div className="overflow-hidden bg-white shadow sm:rounded-md">
-            <ul role="list" className="divide-y divide-gray-200">
-              {healthMetrics.map((metric) => (
-                <li key={metric.id}>
-                  <div className="flex items-center px-4 py-4 sm:px-6">
-                    <div className="flex min-w-0 flex-1 items-center">
-                      <div className="flex-shrink-0">
-                        <metric.icon className={`h-10 w-10 ${metric.color}`} aria-hidden="true" />
-                      </div>
-                      <div className="min-w-0 flex-1 px-4">
-                        <p className="text-sm font-medium text-gray-900">{metric.name}</p>
-                        <div className="flex items-center">
-                          <p className="truncate text-sm text-gray-500">{metric.value}</p>
-                          <span className={`ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            metric.status === 'normal' ? 'bg-green-100 text-green-800' : 
-                            metric.status === 'elevated' ? 'bg-yellow-100 text-yellow-800' : 
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {metric.status}
-                          </span>
+            {loading ? (
+              <div className="p-6 text-center">
+                <p className="text-gray-500">Loading health metrics...</p>
+              </div>
+            ) : healthMetrics.length > 0 ? (
+              <ul role="list" className="divide-y divide-gray-200">
+                {healthMetrics.map((metric) => (
+                  <li key={metric.id}>
+                    <div className="flex items-center px-4 py-4 sm:px-6">
+                      <div className="flex min-w-0 flex-1 items-center">
+                        <div className="flex-shrink-0">
+                          <metric.icon className={`h-10 w-10 ${metric.color}`} aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0 flex-1 px-4">
+                          <p className="text-sm font-medium text-gray-900">{metric.name}</p>
+                          <div className="flex items-center">
+                            <p className="truncate text-sm text-gray-500">{metric.value}</p>
+                            <span className={`ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              metric.status === 'normal' ? 'bg-green-100 text-green-800' : 
+                              metric.status === 'elevated' ? 'bg-yellow-100 text-yellow-800' : 
+                              metric.status === 'high' ? 'bg-red-100 text-red-800' :
+                              metric.status === 'low' ? 'bg-yellow-100 text-yellow-800' :
+                              metric.status === 'underweight' ? 'bg-yellow-100 text-yellow-800' :
+                              metric.status === 'overweight' ? 'bg-yellow-100 text-yellow-800' :
+                              metric.status === 'obese' ? 'bg-red-100 text-red-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {metric.status}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right text-sm text-gray-500">
+                        <p>Last updated</p>
+                        <p>{metric.date}</p>
+                      </div>
                     </div>
-                    <div className="text-right text-sm text-gray-500">
-                      <p>Last updated</p>
-                      <p>{metric.date}</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="p-8 text-center">
+                <ExclamationCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No health metrics available</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Add your health metrics like blood pressure, heart rate, and weight to see them here.
+                </p>
+                <Link
+                  href="/dashboard/patient/profile"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+                >
+                  <PlusCircleIcon className="h-5 w-5 mr-2" />
+                  Update Health Profile
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -209,7 +321,11 @@ export default function PatientDashboardContent() {
             </Link>
           </div>
           <div className="overflow-hidden bg-white shadow sm:rounded-md">
-            {upcomingAppointments.length > 0 ? (
+            {loading ? (
+              <div className="p-6 text-center">
+                <p className="text-gray-500">Loading appointments...</p>
+              </div>
+            ) : upcomingAppointments.length > 0 ? (
               <ul role="list" className="divide-y divide-gray-200">
                 {upcomingAppointments.map((appointment) => (
                   <li key={appointment.id}>
@@ -230,12 +346,12 @@ export default function PatientDashboardContent() {
                           </p>
                         </div>
                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <button
-                            type="button"
+                          <Link
+                            href="/dashboard/patient/appointments"
                             className="rounded bg-primary-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
                           >
                             Reschedule
-                          </button>
+                          </Link>
                         </div>
                       </div>
                     </div>
@@ -243,21 +359,26 @@ export default function PatientDashboardContent() {
                 ))}
               </ul>
             ) : (
-              <div className="px-4 py-6 text-center text-sm text-gray-500">
-                <p>No upcoming appointments.</p>
-                <button
-                  type="button"
-                  className="mt-2 rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+              <div className="p-8 text-center">
+                <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No upcoming appointments</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  You don't have any upcoming appointments scheduled. Book one with our healthcare providers.
+                </p>
+                <Link
+                  href="/dashboard/patient/appointments"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
                 >
+                  <CalendarIcon className="h-5 w-5 mr-2" />
                   Book Appointment
-                </button>
+                </Link>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Recent Medical Reports */}
+      {/* Recent medical reports */}
       <div className="mt-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-900">Recent Medical Reports</h2>
@@ -269,192 +390,56 @@ export default function PatientDashboardContent() {
           </Link>
         </div>
         <div className="overflow-hidden bg-white shadow sm:rounded-md">
-          {recentReports.length > 0 ? (
+          {loading ? (
+            <div className="p-6 text-center">
+              <p className="text-gray-500">Loading reports...</p>
+            </div>
+          ) : recentReports.length > 0 ? (
             <ul role="list" className="divide-y divide-gray-200">
               {recentReports.map((report) => (
                 <li key={report.id}>
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-primary-600">{report.name}</p>
-                      <div className="flex flex-shrink-0 ml-2">
-                        <p className="inline-flex rounded-full bg-blue-100 px-2 text-xs font-semibold leading-5 text-blue-800">
-                          {report.type}
-                        </p>
+                  <Link href={`/dashboard/patient/records/${report.id}`} className="block hover:bg-gray-50">
+                    <div className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <p className="truncate text-sm font-medium text-primary-600">{report.name}</p>
+                        <div className="ml-2 flex flex-shrink-0">
+                          <p className="inline-flex rounded-full bg-blue-100 px-2 text-xs font-semibold leading-5 text-blue-800">
+                            {report.type}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex justify-between">
+                        <div className="sm:flex">
+                          <p className="flex items-center text-sm text-gray-500">
+                            {report.date}
+                          </p>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-1.5" />
+                          <p>View Report</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-2 sm:flex sm:justify-between">
-                      <div className="sm:flex">
-                        <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-1.5" />
-                        <p className="flex items-center text-sm text-gray-500">
-                          Uploaded on {report.date}
-                        </p>
-                      </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                        <button
-                          type="button"
-                          className="rounded bg-primary-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-                        >
-                          View Report
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="px-4 py-6 text-center text-sm text-gray-500">
-              <p>No medical reports available.</p>
+            <div className="p-8 text-center">
+              <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No medical reports</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                No medical reports have been uploaded to your account yet.
+              </p>
               <Link
                 href="/dashboard/patient/upload-report"
-                className="mt-2 inline-block rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
               >
+                <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
                 Upload Report
               </Link>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Find a Doctor */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-gray-900">Find a Doctor</h2>
-          <button
-            onClick={() => setShowDoctorSelection(!showDoctorSelection)}
-            className="text-sm font-medium text-primary-600 hover:text-primary-500"
-          >
-            {showDoctorSelection ? 'Hide' : 'Show'}
-          </button>
-        </div>
-        
-        {showDoctorSelection && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 border-b">
-              <h3 className="text-base font-medium text-gray-900 mb-2">Select a Specialty</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {doctorSpecialties.map((specialty) => (
-                  <button
-                    key={specialty.id}
-                    onClick={() => setSelectedSpecialty(specialty.id)}
-                    className={`px-3 py-2 rounded text-sm font-medium ${
-                      selectedSpecialty === specialty.id
-                        ? 'bg-primary-100 text-primary-800 ring-1 ring-primary-500'
-                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                    }`}
-                  >
-                    {specialty.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {selectedSpecialty && (
-              <div className="p-4">
-                <div className="mb-4">
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                    </div>
-                    <input
-                      type="text"
-                      className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
-                      placeholder="Search doctors by name"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <h3 className="text-base font-medium text-gray-900 mb-3">
-                  {doctorSpecialties.find(s => s.id === selectedSpecialty)?.name} Doctors
-                </h3>
-                
-                {filteredDoctors.length > 0 ? (
-                  <ul className="divide-y divide-gray-200">
-                    {filteredDoctors.map((doctor) => (
-                      <li key={doctor.id} className="py-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                              <UserIcon className="h-6 w-6 text-primary-600" />
-                            </div>
-                            <div className="ml-3">
-                              <p className="text-sm font-medium text-gray-900">{doctor.name}</p>
-                              <div className="flex items-center">
-                                <p className="text-sm text-gray-500 mr-2">Experience: {doctor.experience}</p>
-                                <p className="text-sm text-gray-500">Rating: {doctor.rating}/5</p>
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={!doctor.available}
-                            className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm ${
-                              doctor.available
-                                ? 'text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500'
-                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            }`}
-                          >
-                            <UserPlusIcon className="mr-1 h-4 w-4" />
-                            {doctor.available ? 'Request Appointment' : 'Unavailable'}
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500 text-sm">No doctors found. Try another specialty or search term.</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* AI Health Insights */}
-      <div className="mt-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">AI Health Insights</h2>
-        <div className="bg-white p-6 shadow sm:rounded-lg">
-          <h3 className="text-base font-medium text-gray-900">Your Health Recommendations</h3>
-          <div className="mt-5 border-t border-gray-200 pt-5">
-            <div className="flow-root">
-              <ul role="list" className="-my-5 divide-y divide-gray-200">
-                <li className="py-5">
-                  <div className="relative">
-                    <h4 className="text-sm font-semibold text-gray-800">Based on your blood pressure readings</h4>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Your blood pressure readings have been stable. Continue monitoring regularly and maintain your healthy lifestyle.
-                    </p>
-                  </div>
-                </li>
-                <li className="py-5">
-                  <div className="relative">
-                    <h4 className="text-sm font-semibold text-gray-800">Glucose level recommendation</h4>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Your glucose levels are slightly elevated. Consider reducing your intake of refined sugars and increasing physical activity.
-                    </p>
-                  </div>
-                </li>
-                <li className="py-5">
-                  <div className="relative">
-                    <h4 className="text-sm font-semibold text-gray-800">General health reminder</h4>
-                    <p className="mt-1 text-sm text-gray-600">
-                      It's been over a year since your last full checkup. Consider scheduling an appointment with your primary care physician.
-                    </p>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-6">
-              <Link
-                href="/dashboard/patient/health-plan"
-                className="flex w-full items-center justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary-600 shadow-sm ring-1 ring-inset ring-primary-300 hover:bg-gray-50"
-              >
-                View your personalized health plan
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
     </div>
