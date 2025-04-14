@@ -126,6 +126,9 @@ export default function PatientProfilePage() {
       });
       
       if (profileUpdated && user) {
+        // Get the MongoDB ID (could be in _id or id field)
+        const userId = user._id || user.id;
+        
         // Extract health metrics for the dedicated health metrics API
         const healthMetrics = {
           height: formData.height,
@@ -144,7 +147,7 @@ export default function PatientProfilePage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId: user.id,
+            userId: userId,
             metrics: healthMetrics
           }),
         });

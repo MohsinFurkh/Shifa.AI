@@ -40,8 +40,11 @@ export default function AppointmentsPage() {
       setLoading(true);
       try {
         if (user) {
+          // Get the MongoDB ID (could be in _id or id field)
+          const userId = user._id || user.id;
+          
           // Fetch appointments from the server
-          const response = await fetch(`/api/patient/appointments?userId=${user.id}`);
+          const response = await fetch(`/api/patient/appointments?userId=${userId}`);
           
           if (response.ok) {
             const { data } = await response.json();
@@ -111,9 +114,12 @@ export default function AppointmentsPage() {
       // Get doctor details
       const selectedDoctor = sampleDoctors.find(doc => doc.id === parseInt(formData.doctorId));
 
+      // Get the MongoDB ID (could be in _id or id field)
+      const userId = user._id || user.id;
+
       // Create new appointment data
       const appointmentData = {
-        patientId: user.id,
+        patientId: userId,
         patientName: user.name,
         doctorName: selectedDoctor.name,
         doctorSpecialty: selectedDoctor.specialty,

@@ -1,4 +1,6 @@
-import { findUserByEmail, createUser, hashPassword } from '../../../lib/static-data';
+import bcrypt from 'bcryptjs';
+import dbConnect from '../../../lib/db';
+import User from '../../../models/User';
 import { generateToken } from '../../../lib/jwt';
 
 // Make sure this function is exported as default
@@ -9,6 +11,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    await dbConnect();
+    
     const { firstName, lastName, email, password, userType } = req.body;
     
     // Only allow patient registration through this endpoint
@@ -20,31 +24,35 @@ export default async function handler(req, res) {
     }
     
     // Check if user already exists
-    const existingUser = findUserByEmail(email);
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ success: false, message: 'Email already registered' });
     }
     
-    // Hash the password
-    const hashedPassword = await hashPassword(password);
-    
     // Create new user
-    const user = createUser({
+    const user = new User({
       firstName,
       lastName,
       email,
-      password: hashedPassword,
+      password, // Will be hashed by the pre-save hook in the model
       userType
     });
     
+    // Save the user to the database
+    await user.save();
+    
     // Generate JWT token
-    const token = generateToken(user);
+    const token = generateToken({
+      id: user._id,
+      email: user.email,
+      userType: user.userType
+    });
     
     // Return user data (without password) and token
     return res.status(201).json({
       success: true,
       data: {
-        id: user.id,
+        id: user._id,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
         type: user.userType,

@@ -1,4 +1,6 @@
-import { getDashboardStats, getRecentUsers } from '../../../lib/static-data';
+import dbConnect from '../../../lib/db';
+import User from '../../../models/User';
+import Appointment from '../../../models/Appointment';
 
 export default async function handler(req, res) {
   // Only allow GET method
@@ -7,19 +9,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get dashboard stats
-    const stats = getDashboardStats();
+    await dbConnect();
+    
+    // Get counts from database
+    const totalUsers = await User.countDocuments();
+    const activeDoctors = await User.countDocuments({ userType: 'doctor' });
+    const activePatients = await User.countDocuments({ userType: 'patient' });
+    const consultations = await Appointment.countDocuments({ status: { $ne: 'cancelled' } });
     
     // Get recent users
-    const recentUsers = getRecentUsers(5);
+    const recentUsers = await User.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean()
+      .then(users => users.map(user => ({
+        id: user._id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        type: user.userType,
+        status: 'active', // For simplicity, all users are active
+        date: new Date(user.createdAt).toISOString().split('T')[0] // Format date as YYYY-MM-DD
+      })));
     
     // Return the data
     return res.status(200).json({
       success: true,
-      totalUsers: stats.totalUsers,
-      activeDoctors: stats.activeDoctors,
-      activePatients: stats.activePatients,
-      consultations: stats.consultations,
+      totalUsers,
+      activeDoctors,
+      activePatients,
+      consultations,
       recentUsers
     });
   } catch (error) {

@@ -1,4 +1,6 @@
-import { getUserHealthMetrics, findUserById } from '../../../lib/static-data';
+import dbConnect from '../../../lib/db';
+import HealthMetric from '../../../models/HealthMetric';
+import User from '../../../models/User';
 
 export default async function handler(req, res) {
   // Only allow GET method
@@ -7,6 +9,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    await dbConnect();
+    
     const { userId } = req.query;
     
     if (!userId) {
@@ -14,18 +18,27 @@ export default async function handler(req, res) {
     }
     
     // Verify user exists
-    const user = findUserById(userId);
+    const user = await User.findOne({ _id: userId });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Get user's health metrics
-    const metrics = getUserHealthMetrics(userId);
+    // Get the most recent health metric
+    const currentMetric = await HealthMetric.findOne({ userId })
+      .sort({ timestamp: -1 });
+    
+    // Get historical metrics
+    const history = await HealthMetric.find({ userId })
+      .sort({ timestamp: -1 })
+      .limit(10);
     
     // Return metrics
     return res.status(200).json({
       success: true,
-      data: metrics
+      data: {
+        current: currentMetric || null,
+        history: history || []
+      }
     });
   } catch (error) {
     console.error('Error getting health metrics:', error);

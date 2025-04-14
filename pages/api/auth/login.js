@@ -1,4 +1,6 @@
-import { findUserByEmail, comparePassword } from '../../../lib/static-data';
+import bcrypt from 'bcryptjs';
+import dbConnect from '../../../lib/db';
+import User from '../../../models/User';
 import { generateToken } from '../../../lib/jwt';
 
 // Make sure this function is exported as default
@@ -9,14 +11,16 @@ export default async function handler(req, res) {
   }
 
   try {
+    await dbConnect();
+    
     const { email, password, userType } = req.body;
     
     console.log('Login attempt:', { email, userType });
     
-    // Find user by email in static data
-    const user = findUserByEmail(email);
+    // Find user by email in database
+    const user = await User.findOne({ email });
     console.log('User found:', user ? { 
-      id: user.id,
+      id: user._id,
       email: user.email,
       userType: user.userType,
       passwordProvided: password ? '***' : 'none',
@@ -34,7 +38,7 @@ export default async function handler(req, res) {
     }
     
     // Verify password
-    const isPasswordValid = await comparePassword(user.password, password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     console.log('Password validation:', { isValid: isPasswordValid });
     
     if (!isPasswordValid) {
@@ -42,7 +46,11 @@ export default async function handler(req, res) {
     }
     
     // Generate JWT token
-    const token = generateToken(user);
+    const token = generateToken({
+      id: user._id,
+      email: user.email,
+      userType: user.userType
+    });
     
     console.log('Login successful for:', { email, userType });
     
@@ -50,7 +58,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       data: {
-        id: user.id,
+        id: user._id,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
         type: user.userType,
@@ -59,9 +67,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Login failed' 
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Login failed'
     });
   }
 } 

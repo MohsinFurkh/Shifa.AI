@@ -106,17 +106,24 @@ export default function PatientDashboardContent() {
           // Initialize empty metrics array
           const metrics = [];
           
-          // Fetch health metrics from API
-          const healthResponse = await fetch(`/api/patient/get-health-metrics?userId=${user.id}`);
-          let healthData = null;
+          // MongoDB stores IDs as ObjectId, so we need to ensure we're using the right ID
+          const userId = userData._id || userData.id;
           
-          if (healthResponse.ok) {
-            const responseData = await healthResponse.json();
-            healthData = responseData.data;
+          // Fetch health metrics from API
+          let healthData = null;
+          try {
+            const healthResponse = await fetch(`/api/patient/get-health-metrics?userId=${userId}`);
+            
+            if (healthResponse.ok) {
+              const responseData = await healthResponse.json();
+              healthData = responseData.data;
+            }
+          } catch (error) {
+            console.error("Error fetching health metrics:", error);
           }
           
           // Fetch appointments from API
-          const appointmentsResponse = await fetch(`/api/patient/appointments?userId=${user.id}`);
+          const appointmentsResponse = await fetch(`/api/patient/appointments?userId=${userId}`);
           let appointmentsData = [];
           
           if (appointmentsResponse.ok) {

@@ -1,9 +1,6 @@
-import { 
-  getUserAppointments, 
-  createAppointment, 
-  updateAppointment, 
-  findUserById 
-} from '../../../lib/static-data';
+import dbConnect from '../../../lib/db';
+import Appointment from '../../../models/Appointment';
+import User from '../../../models/User';
 
 export default async function handler(req, res) {
   // Handle different HTTP methods
@@ -22,25 +19,37 @@ export default async function handler(req, res) {
 // Get a user's appointments
 async function getAppointments(req, res) {
   try {
-    const { userId } = req.query;
+    await dbConnect();
+    
+    const { userId, status } = req.query;
     
     if (!userId) {
       return res.status(400).json({ success: false, message: 'User ID is required' });
     }
     
     // Verify user exists
-    const user = findUserById(userId);
+    const user = await User.findOne({ _id: userId });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
+    // Build the query
+    const query = { patientId: userId };
+    
+    // Add status filter if provided
+    if (status) {
+      query.status = status;
+    }
+    
     // Get user's appointments
-    const userAppointments = getUserAppointments(userId);
+    const appointments = await Appointment.find(query)
+      .sort({ date: 1, time: 1 }) // Sort by date and time
+      .lean(); // Convert to plain JS objects
     
     // Return appointments
     return res.status(200).json({
       success: true,
-      data: userAppointments
+      data: appointments
     });
   } catch (error) {
     console.error('Error getting appointments:', error);
@@ -54,6 +63,8 @@ async function getAppointments(req, res) {
 // Create a new appointment
 async function createNewAppointment(req, res) {
   try {
+    await dbConnect();
+    
     const appointmentData = req.body;
     
     if (!appointmentData.patientId) {
@@ -61,18 +72,24 @@ async function createNewAppointment(req, res) {
     }
     
     // Verify patient exists
-    const patient = findUserById(appointmentData.patientId);
+    const patient = await User.findOne({ _id: appointmentData.patientId });
     if (!patient) {
       return res.status(404).json({ success: false, message: 'Patient not found' });
     }
     
     // Create new appointment
-    const newAppointment = createAppointment(appointmentData);
+    const appointment = new Appointment({
+      ...appointmentData,
+      createdAt: new Date()
+    });
+    
+    // Save to database
+    await appointment.save();
     
     // Return the new appointment
     return res.status(201).json({
       success: true,
-      data: newAppointment
+      data: appointment
     });
   } catch (error) {
     console.error('Error creating appointment:', error);
@@ -86,14 +103,23 @@ async function createNewAppointment(req, res) {
 // Update an existing appointment
 async function updateExistingAppointment(req, res) {
   try {
+    await dbConnect();
+    
     const { appointmentId, ...updatedData } = req.body;
     
     if (!appointmentId) {
       return res.status(400).json({ success: false, message: 'Appointment ID is required' });
     }
     
+    // Add updated timestamp
+    updatedData.updatedAt = new Date();
+    
     // Update the appointment
-    const updatedAppointment = updateAppointment(appointmentId, updatedData);
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { $set: updatedData },
+      { new: true, runValidators: true } // Return updated document and run schema validators
+    );
     
     if (!updatedAppointment) {
       return res.status(404).json({ success: false, message: 'Appointment not found' });

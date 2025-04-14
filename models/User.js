@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-// Check if the User model already exists to prevent overwriting during hot reloads
+// Check if User model already exists to prevent overwrite during hot reload
 const UserSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -31,9 +31,45 @@ const UserSchema = new mongoose.Schema({
     enum: ['patient', 'doctor', 'admin'],
     default: 'patient'
   },
+  phone: {
+    type: String,
+    trim: true
+  },
+  dateOfBirth: {
+    type: String
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', '']
+  },
+  bloodType: {
+    type: String
+  },
+  allergies: {
+    type: String
+  },
+  medicalConditions: {
+    type: String
+  },
+  medications: {
+    type: String
+  },
+  // For doctors
+  specialty: {
+    type: String
+  },
+  experience: {
+    type: String
+  },
+  education: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date
   }
 });
 
@@ -57,6 +93,7 @@ UserSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Use mongoose.models to check if the model exists already to prevent overwrite error
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
 export default User; 

@@ -1,4 +1,6 @@
-import { updateUserHealthMetrics, findUserById } from '../../../lib/static-data';
+import dbConnect from '../../../lib/db';
+import HealthMetric from '../../../models/HealthMetric';
+import User from '../../../models/User';
 
 export default async function handler(req, res) {
   // Only allow POST method
@@ -7,6 +9,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    await dbConnect();
+    
     const { userId, metrics } = req.body;
     
     if (!userId) {
@@ -14,18 +18,33 @@ export default async function handler(req, res) {
     }
     
     // Verify user exists
-    const user = findUserById(userId);
+    const user = await User.findOne({ _id: userId });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Update health metrics
-    const updatedMetrics = updateUserHealthMetrics(userId, metrics);
+    // Create a new health metric record
+    const healthMetric = new HealthMetric({
+      userId,
+      ...metrics,
+      timestamp: new Date()
+    });
     
-    // Return updated metrics
+    // Save to the database
+    await healthMetric.save();
+    
+    // Get latest metrics for this user
+    const latestMetrics = await HealthMetric.find({ userId })
+      .sort({ timestamp: -1 })
+      .limit(10);
+    
+    // Return the new metrics and history
     return res.status(200).json({
       success: true,
-      data: updatedMetrics
+      data: {
+        current: healthMetric,
+        history: latestMetrics
+      }
     });
   } catch (error) {
     console.error('Error updating health metrics:', error);
