@@ -13,8 +13,6 @@
   ],
   "installCommand": "npm install --legacy-peer-deps",
   "env": {
-    "MONGODB_URI": "mongodb+srv://shifadotai:Shireen%402024@shifaaicluster.8sou1eg.mongodb.net/?retryWrites=true&w=majority&appName=ShifaAICluster",
-    "DB_NAME": "shifa",
-    "JWT_SECRET": "Shireen@2024"
+    "MONGODB_URI": "mongodb+srv://vercel-admin-user-67fcc74c1a35f7543f6d056e:kcMO3XLU9ZHCj430@shifaaicluster.8sou1eg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
   }
 } 
