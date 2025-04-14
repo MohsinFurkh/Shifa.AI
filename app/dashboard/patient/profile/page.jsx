@@ -29,22 +29,38 @@ export default function PatientProfilePage() {
 
   useEffect(() => {
     if (user) {
+      // Try to get the most up-to-date data from localStorage
+      let userData = user;
+      const storedUserData = localStorage.getItem('shifaai_user');
+      
+      if (storedUserData) {
+        try {
+          const parsedData = JSON.parse(storedUserData);
+          // Use localStorage data if it's for the current user
+          if (parsedData.email === user.email && parsedData.id === user.id) {
+            userData = parsedData;
+          }
+        } catch (e) {
+          console.error("Error parsing stored user data", e);
+        }
+      }
+      
+      // Set form data from user data
       setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        dateOfBirth: user.dateOfBirth || '',
-        gender: user.gender || '',
-        bloodType: user.bloodType || '',
-        allergies: user.allergies || '',
-        medicalConditions: user.medicalConditions || '',
-        medications: user.medications || '',
-        // New health metrics fields
-        height: user.height || '',
-        weight: user.weight || '',
-        bloodPressure: user.bloodPressure || '',
-        heartRate: user.heartRate || '',
-        glucoseLevel: user.glucoseLevel || '',
+        name: userData.name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        dateOfBirth: userData.dateOfBirth || '',
+        gender: userData.gender || '',
+        bloodType: userData.bloodType || '',
+        allergies: userData.allergies || '',
+        medicalConditions: userData.medicalConditions || '',
+        medications: userData.medications || '',
+        height: userData.height || '',
+        weight: userData.weight || '',
+        bloodPressure: userData.bloodPressure || '',
+        heartRate: userData.heartRate || '',
+        glucoseLevel: userData.glucoseLevel || '',
       });
     }
   }, [user]);

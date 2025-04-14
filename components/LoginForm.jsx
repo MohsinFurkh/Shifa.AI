@@ -37,14 +37,51 @@ export default function LoginForm() {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Login the user with the returned data
-      login({
+      // Check if user data already exists in localStorage to preserve profile data
+      const existingUserData = localStorage.getItem('shifaai_user');
+      let savedUserData = null;
+      
+      if (existingUserData) {
+        try {
+          const parsedData = JSON.parse(existingUserData);
+          // If this is the same user (by email and type), preserve their data
+          if (parsedData.email === data.data.email && parsedData.type === data.data.type) {
+            savedUserData = parsedData;
+          }
+        } catch (e) {
+          console.error("Error parsing existing user data", e);
+        }
+      }
+      
+      // Create user data object, preserving existing data if available
+      const userData = {
         id: data.data.id,
         email: data.data.email,
-        name: data.data.name,
+        name: data.data.name || (savedUserData?.name || ''),
         type: data.data.type,
-        token: data.data.token
-      });
+        token: data.data.token,
+        // Preserve health metrics and profile data
+        bloodPressure: savedUserData?.bloodPressure || '',
+        heartRate: savedUserData?.heartRate || '',
+        glucoseLevel: savedUserData?.glucoseLevel || '',
+        height: savedUserData?.height || '',
+        weight: savedUserData?.weight || '',
+        lastMetricsUpdate: savedUserData?.lastMetricsUpdate || '',
+        dateOfBirth: savedUserData?.dateOfBirth || '',
+        gender: savedUserData?.gender || '',
+        bloodType: savedUserData?.bloodType || '',
+        allergies: savedUserData?.allergies || '',
+        medicalConditions: savedUserData?.medicalConditions || '',
+        medications: savedUserData?.medications || '',
+        phone: savedUserData?.phone || '',
+        // Preserve appointments if they exist
+        appointments: savedUserData?.appointments || [],
+        // Preserve reports if they exist
+        reports: savedUserData?.reports || []
+      };
+      
+      // Login the user with the combined data
+      login(userData);
     } catch (err) {
       setError(err.message || 'Failed to login. Please check your credentials.');
       setLoading(false);

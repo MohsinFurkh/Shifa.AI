@@ -26,6 +26,8 @@ const quickActions = [
   { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker', icon: ClipboardDocumentListIcon, color: 'bg-blue-500' },
   { name: 'Book Appointment', href: '/dashboard/patient/appointments', icon: CalendarIcon, color: 'bg-purple-500' },
   { name: 'Chat with Doctor', href: '/dashboard/patient/chat', icon: ChatBubbleBottomCenterTextIcon, color: 'bg-green-500' },
+  { name: 'Find a Doctor', href: '/dashboard/patient/find-doctor', icon: UserPlusIcon, color: 'bg-orange-500' },
+  { name: 'AI Health Insights', href: '/dashboard/patient/analytics', icon: ChartBarIcon, color: 'bg-teal-500' },
   { name: 'Upload Report', href: '/dashboard/patient/upload-report', icon: DocumentArrowUpIcon, color: 'bg-yellow-500' },
   { name: 'My Records', href: '/dashboard/patient/records', icon: DocumentTextIcon, color: 'bg-indigo-500' },
   { name: 'My Medications', href: '/dashboard/patient/medications', icon: BeakerIcon, color: 'bg-red-500' },
@@ -81,67 +83,83 @@ export default function PatientDashboardContent() {
   // Effect to load user data
   useEffect(() => {
     if (user) {
+      // Try to get the most up-to-date data from localStorage
+      let userData = user;
+      const storedUserData = localStorage.getItem('shifaai_user');
+      
+      if (storedUserData) {
+        try {
+          const parsedData = JSON.parse(storedUserData);
+          // Use localStorage data if it's for the current user
+          if (parsedData.email === user.email && parsedData.id === user.id) {
+            userData = parsedData;
+          }
+        } catch (e) {
+          console.error("Error parsing stored user data", e);
+        }
+      }
+      
       // Initialize health metrics from user data or empty array
       const metrics = [];
       
       // Add blood pressure if available
-      if (user.bloodPressure) {
+      if (userData.bloodPressure) {
         metrics.push({
           id: 1,
           name: 'Blood Pressure',
-          value: user.bloodPressure,
-          status: getBPStatus(user.bloodPressure),
-          date: user.lastMetricsUpdate || 'Not updated',
+          value: userData.bloodPressure,
+          status: getBPStatus(userData.bloodPressure),
+          date: userData.lastMetricsUpdate || 'Not updated',
           icon: HeartIcon,
-          color: getStatusColor(getBPStatus(user.bloodPressure)),
+          color: getStatusColor(getBPStatus(userData.bloodPressure)),
         });
       }
       
       // Add heart rate if available
-      if (user.heartRate) {
+      if (userData.heartRate) {
         metrics.push({
           id: 2,
           name: 'Heart Rate',
-          value: `${user.heartRate} bpm`,
-          status: getHeartRateStatus(user.heartRate),
-          date: user.lastMetricsUpdate || 'Not updated',
+          value: `${userData.heartRate} bpm`,
+          status: getHeartRateStatus(userData.heartRate),
+          date: userData.lastMetricsUpdate || 'Not updated',
           icon: HeartIcon,
-          color: getStatusColor(getHeartRateStatus(user.heartRate)),
+          color: getStatusColor(getHeartRateStatus(userData.heartRate)),
         });
       }
       
       // Add glucose level if available
-      if (user.glucoseLevel) {
+      if (userData.glucoseLevel) {
         metrics.push({
           id: 3,
           name: 'Glucose Level',
-          value: `${user.glucoseLevel} mg/dL`,
-          status: getGlucoseStatus(user.glucoseLevel),
-          date: user.lastMetricsUpdate || 'Not updated',
+          value: `${userData.glucoseLevel} mg/dL`,
+          status: getGlucoseStatus(userData.glucoseLevel),
+          date: userData.lastMetricsUpdate || 'Not updated',
           icon: BeakerIcon,
-          color: getStatusColor(getGlucoseStatus(user.glucoseLevel)),
+          color: getStatusColor(getGlucoseStatus(userData.glucoseLevel)),
         });
       }
       
       // Add weight if available
-      if (user.weight && user.height) {
-        const bmi = calculateBMI(user.weight, user.height);
+      if (userData.weight && userData.height) {
+        const bmi = calculateBMI(userData.weight, userData.height);
         metrics.push({
           id: 4,
           name: 'Weight & BMI',
-          value: `${user.weight} kg (BMI: ${bmi.toFixed(1)})`,
+          value: `${userData.weight} kg (BMI: ${bmi.toFixed(1)})`,
           status: getBMIStatus(bmi),
-          date: user.lastMetricsUpdate || 'Not updated',
+          date: userData.lastMetricsUpdate || 'Not updated',
           icon: UserIcon,
           color: getStatusColor(getBMIStatus(bmi)),
         });
-      } else if (user.weight) {
+      } else if (userData.weight) {
         metrics.push({
           id: 4,
           name: 'Weight',
-          value: `${user.weight} kg`,
+          value: `${userData.weight} kg`,
           status: 'info',
-          date: user.lastMetricsUpdate || 'Not updated',
+          date: userData.lastMetricsUpdate || 'Not updated',
           icon: UserIcon,
           color: 'text-blue-500',
         });
@@ -150,10 +168,10 @@ export default function PatientDashboardContent() {
       setHealthMetrics(metrics);
       
       // Load appointments if any
-      setUpcomingAppointments(user.appointments?.filter(apt => apt.status === 'upcoming') || []);
+      setUpcomingAppointments(userData.appointments?.filter(apt => apt.status === 'upcoming') || []);
       
       // Load reports if any
-      setRecentReports(user.reports || []);
+      setRecentReports(userData.reports || []);
     }
     
     setLoading(false);

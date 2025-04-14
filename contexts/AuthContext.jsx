@@ -87,9 +87,43 @@ export const AuthProvider = ({ children }) => {
 
   // Update user profile
   const updateProfile = (newUserData) => {
-    const updatedUser = { ...user, ...newUserData };
-    setUser(updatedUser);
-    localStorage.setItem('shifaai_user', JSON.stringify(updatedUser));
+    try {
+      // Get the latest stored user data first to ensure we have the most up-to-date data
+      const storedUser = localStorage.getItem('shifaai_user');
+      let currentUserData = user;
+      
+      if (storedUser) {
+        try {
+          const parsedData = JSON.parse(storedUser);
+          // Only use stored data if it's for the current user
+          if (parsedData.email === user.email && parsedData.id === user.id) {
+            currentUserData = parsedData;
+          }
+        } catch (e) {
+          console.error("Error parsing stored user data", e);
+        }
+      }
+      
+      // Create a new user object with the updated data
+      const updatedUser = { 
+        ...currentUserData, 
+        ...newUserData,
+        // Always preserve token to maintain authentication
+        token: user.token
+      };
+      
+      // Update state and localStorage
+      setUser(updatedUser);
+      localStorage.setItem('shifaai_user', JSON.stringify(updatedUser));
+      
+      // Log success message
+      console.log("Profile updated successfully", updatedUser);
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating profile", error);
+      return false;
+    }
   };
 
   // Get the auth token

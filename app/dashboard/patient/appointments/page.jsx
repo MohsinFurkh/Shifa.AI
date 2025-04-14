@@ -37,7 +37,23 @@ export default function AppointmentsPage() {
   useEffect(() => {
     // Load appointments from user profile
     if (user) {
-      setAppointments(user.appointments || []);
+      // Try to get the most up-to-date data from localStorage
+      let userData = user;
+      const storedUserData = localStorage.getItem('shifaai_user');
+      
+      if (storedUserData) {
+        try {
+          const parsedData = JSON.parse(storedUserData);
+          // Use localStorage data if it's for the current user
+          if (parsedData.email === user.email && parsedData.id === user.id) {
+            userData = parsedData;
+          }
+        } catch (e) {
+          console.error("Error parsing stored user data", e);
+        }
+      }
+      
+      setAppointments(userData.appointments || []);
     }
     setLoading(false);
   }, [user]);
