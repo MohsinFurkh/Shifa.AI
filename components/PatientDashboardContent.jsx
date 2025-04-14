@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
 import {
   ChatBubbleBottomCenterTextIcon,
   DocumentTextIcon,
@@ -117,6 +118,7 @@ export default function PatientDashboardContent() {
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDoctorSelection, setShowDoctorSelection] = useState(false);
+  const { user } = useAuth();
   
   // Filter doctors based on search query
   const filteredDoctors = selectedSpecialty 
@@ -125,13 +127,16 @@ export default function PatientDashboardContent() {
       ) || []
     : [];
 
+  // Get first name for greeting
+  const firstName = user?.name?.split(' ')[0] || 'Patient';
+
   return (
     <div>
       {/* Dashboard header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Patient Dashboard</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Welcome back, John! Here's your health overview.
+          Welcome back, {firstName}! Here's your health overview.
         </p>
       </div>
 
