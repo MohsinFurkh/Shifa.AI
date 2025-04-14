@@ -102,9 +102,9 @@ export default function DashboardLayout({ children }) {
               <Image
                 src="/images/ShifaAILogo.png"
                 alt="ShifaAI Logo"
-                width={180}
-                height={50}
-                className="h-12 w-auto"
+                width={260}
+                height={80}
+                className="h-16 w-auto"
                 priority
               />
             </div>
@@ -145,9 +145,9 @@ export default function DashboardLayout({ children }) {
               <Image
                 src="/images/ShifaAILogo.png"
                 alt="ShifaAI Logo"
-                width={200}
-                height={60}
-                className="h-14 w-auto"
+                width={300}
+                height={90}
+                className="h-20 w-auto"
                 priority
               />
             </Link>
