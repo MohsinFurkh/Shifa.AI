@@ -1,0 +1,18 @@
+[33mcommit 155a4e512c3b264c108256f83f70cc362cb938af[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Mohsin Furkh <mohsinfaurkh@gmail.com>
+Date:   Mon Apr 14 09:39:13 2025 +0530
+
+    Fix patient dashboard welcome message and implement persistent user storage
+
+app/globals.css
+app/layout.jsx
+app/page.jsx
+components/PatientDashboardContent.jsx
+components/home/DashboardSection.jsx
+components/home/FeatureCard.jsx
+components/home/FeaturesSection.jsx
+components/home/HeroSection.jsx
+components/home/MedicalImagingPreview.jsx
+components/home/TestimonialsSection.jsx
+lib/static-data.js
+tailwind.config.js

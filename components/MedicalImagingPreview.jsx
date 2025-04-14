@@ -1,15 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 
 export default function MedicalImagingPreview() {
   const [imgError, setImgError] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  
-  // Only run client-side code after component mounts
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
   
   return (
     <section className="py-16 bg-white">
@@ -76,10 +71,10 @@ export default function MedicalImagingPreview() {
           
           <div className="mt-10 lg:mt-0">
             <div className="rounded-lg overflow-hidden shadow-lg">
-              {isMounted ? (
-                !imgError ? (
+              <div className="relative w-full" style={{ minHeight: "300px" }}>
+                {!imgError ? (
                   <img 
-                    src="/images/medical-imaging-ai.png" 
+                    src="/images/Fig-1.jpg" 
                     alt="AI Medical Imaging Analysis" 
                     className="w-full"
                     onError={() => setImgError(true)}
@@ -87,33 +82,11 @@ export default function MedicalImagingPreview() {
                 ) : (
                   <div 
                     className="w-full h-[300px] flex items-center justify-center bg-gray-200 text-gray-500"
-                    style={{ 
-                      background: "#e2e8f0",
-                      color: "#64748b", 
-                      display: "flex", 
-                      alignItems: "center", 
-                      justifyContent: "center",
-                      minHeight: "300px"
-                    }}
                   >
                     <span className="text-xl font-medium">AI Medical Imaging</span>
                   </div>
-                )
-              ) : (
-                <div 
-                  className="w-full h-[300px] flex items-center justify-center bg-gray-200 text-gray-500"
-                  style={{ 
-                    background: "#e2e8f0",
-                    color: "#64748b", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center",
-                    minHeight: "300px"
-                  }}
-                >
-                  <span className="text-xl font-medium">AI Medical Imaging</span>
-                </div>
-              )}
+                )}
+              </div>
               <div className="bg-gray-50 px-4 py-4">
                 <div className="text-sm font-medium text-gray-500">
                   AI-powered analysis highlighting potential areas of concern

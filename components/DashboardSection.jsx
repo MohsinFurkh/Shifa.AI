@@ -1,16 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 
 export default function DashboardSection() {
   const [imgError, setImgError] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  
-  // Only run client-side code after component mounts
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
   
   return (
     <section className="py-16 bg-gray-50" id="dashboard">
@@ -27,10 +21,10 @@ export default function DashboardSection() {
         <div className="relative">
           {/* Dashboard preview image */}
           <div className="rounded-lg shadow-xl overflow-hidden border border-gray-200">
-            {isMounted ? (
-              !imgError ? (
+            <div className="relative w-full" style={{ minHeight: "400px" }}>
+              {!imgError ? (
                 <img 
-                  src="/images/dashboard-preview.png" 
+                  src="/images/Fig-2.png" 
                   alt="ShifaAI Dashboard Preview" 
                   className="w-full"
                   onError={() => setImgError(true)}
@@ -38,33 +32,11 @@ export default function DashboardSection() {
               ) : (
                 <div 
                   className="w-full h-[400px] flex items-center justify-center bg-gray-200 text-gray-500"
-                  style={{ 
-                    background: "#e2e8f0",
-                    color: "#64748b", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center",
-                    minHeight: "400px"
-                  }}
                 >
                   <span className="text-xl font-medium">Patient Dashboard Preview</span>
                 </div>
-              )
-            ) : (
-              <div 
-                className="w-full h-[400px] flex items-center justify-center bg-gray-200 text-gray-500"
-                style={{ 
-                  background: "#e2e8f0",
-                  color: "#64748b", 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "center",
-                  minHeight: "400px"
-                }}
-              >
-                <span className="text-xl font-medium">Patient Dashboard Preview</span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           
           {/* Dashboard features */}

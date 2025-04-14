@@ -1,0 +1,11 @@
+[
+  {
+    "id": "patient-1744603710744",
+    "firstName": "Mohsin Furkh",
+    "lastName": "Dar",
+    "email": "mohsinfaurkh@gmail.com",
+    "password": "$2a$10$kEPgXAYVUu3nbwrhzbyJyeuw1RWzICDWAA6lmSCbJYMNtqNCAIJ36",
+    "userType": "patient",
+    "createdAt": "2025-04-14T04:08:30.744Z"
+  }
+]

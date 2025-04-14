@@ -1,0 +1,65 @@
+[
+  {
+    "id": "admin-1",
+    "firstName": "Mohsin",
+    "lastName": "Furkh",
+    "email": "admin@shifaai.com",
+    "password": "$2a$10$Yw7IUfNx54km97UWsTj6AOE2KDhlQqaOz6EE2wOcJmj6opz8iGxt2",
+    "userType": "admin",
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "doctor-1",
+    "firstName": "Sarah",
+    "lastName": "Johnson",
+    "email": "dr.sarah@shifaai.com",
+    "password": "$2a$10$6pH1FrPJBMVhnnl1DgKYRuX71luJ1/.8N9D0ldyuIUAlzdrE8U9A2",
+    "userType": "doctor",
+    "specialty": "Cardiologist",
+    "experience": "12 years",
+    "education": "MD, Harvard Medical School",
+    "createdAt": "2023-02-15T00:00:00.000Z"
+  },
+  {
+    "id": "doctor-2",
+    "firstName": "Michael",
+    "lastName": "Lee",
+    "email": "dr.michael@shifaai.com",
+    "password": "$2a$10$6pH1FrPJBMVhnnl1DgKYRuX71luJ1/.8N9D0ldyuIUAlzdrE8U9A2",
+    "userType": "doctor",
+    "specialty": "Dermatologist",
+    "experience": "8 years",
+    "education": "MD, Johns Hopkins University",
+    "createdAt": "2023-03-10T00:00:00.000Z"
+  },
+  {
+    "id": "doctor-3",
+    "firstName": "Amelia",
+    "lastName": "Patel",
+    "email": "dr.amelia@shifaai.com",
+    "password": "$2a$10$6pH1FrPJBMVhnnl1DgKYRuX71luJ1/.8N9D0ldyuIUAlzdrE8U9A2",
+    "userType": "doctor",
+    "specialty": "Neurologist",
+    "experience": "15 years",
+    "education": "MD, Stanford University",
+    "createdAt": "2023-01-25T00:00:00.000Z"
+  },
+  {
+    "id": "patient-1",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "password": "$2a$10$6pH1FrPJBMVhnnl1DgKYRuX71luJ1/.8N9D0ldyuIUAlzdrE8U9A2",
+    "userType": "patient",
+    "createdAt": "2023-04-05T00:00:00.000Z"
+  },
+  {
+    "id": "patient-1744606998736",
+    "firstName": "Mohsin Furkh",
+    "lastName": "Dar",
+    "email": "mohsinfaurkh@gmail.com",
+    "password": "$2a$10$OJNWJxhQc6qWehd6mjN/Ne9WgSiamZnfb1AWVhs5e1vl93z7FoyBG",
+    "userType": "patient",
+    "createdAt": "2025-04-14T05:03:18.736Z"
+  }
+]
