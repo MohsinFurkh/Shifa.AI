@@ -11,5 +11,10 @@
       "dest": "/$1"
     }
   ],
-  "installCommand": "npm install --legacy-peer-deps"
+  "installCommand": "npm install --legacy-peer-deps",
+  "env": {
+    "MONGODB_URI": "mongodb+srv://shifadotai:Shireen%402024@shifaaicluster.8sou1eg.mongodb.net/?retryWrites=true&w=majority&appName=ShifaAICluster",
+    "DB_NAME": "shifa",
+    "JWT_SECRET": "Shireen@2024"
+  }
 } 
