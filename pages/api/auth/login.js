@@ -11,22 +11,40 @@ export default async function handler(req, res) {
   try {
     const { email, password, userType } = req.body;
     
+    console.log('Login attempt:', { email, userType });
+    
     // Find user by email in static data
     const user = findUserByEmail(email);
+    console.log('User found:', user ? { 
+      id: user.id,
+      email: user.email,
+      userType: user.userType,
+      passwordProvided: password ? '***' : 'none',
+      passwordInDB: user.password ? 'exists' : 'none'
+    } : 'No user found');
     
     // Check if user exists and is of the correct type
     if (!user || user.userType !== userType) {
+      console.log('User type mismatch or user not found:', { 
+        userFound: !!user, 
+        requestedType: userType, 
+        actualType: user?.userType 
+      });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
     // Verify password
     const isPasswordValid = await comparePassword(user.password, password);
+    console.log('Password validation:', { isValid: isPasswordValid });
+    
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
     // Generate JWT token
     const token = generateToken(user);
+    
+    console.log('Login successful for:', { email, userType });
     
     // Return user data and token
     return res.status(200).json({

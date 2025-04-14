@@ -114,11 +114,11 @@ const doctorsBySpecialty = {
 };
 
 export default function PatientDashboardContent() {
+  const { user } = useAuth();
   // Add state for doctor selection
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDoctorSelection, setShowDoctorSelection] = useState(false);
-  const { user } = useAuth();
   
   // Filter doctors based on search query
   const filteredDoctors = selectedSpecialty 
@@ -127,7 +127,7 @@ export default function PatientDashboardContent() {
       ) || []
     : [];
 
-  // Get first name for greeting
+  // Get the user's first name
   const firstName = user?.name?.split(' ')[0] || 'Patient';
 
   return (
