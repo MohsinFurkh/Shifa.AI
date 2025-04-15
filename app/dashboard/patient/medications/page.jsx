@@ -5,8 +5,8 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { ClockIcon, PlusIcon, XMarkIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
-export default function MedicationsPage() {
-  const { user } = useAuth();
+export default function PatientMedicationsPage() {
+  const auth = useAuth();
   const [medications, setMedications] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -131,7 +131,7 @@ export default function MedicationsPage() {
 
   const todayReminders = getTodayReminders();
 
-  if (!user) {
+  if (!auth || !auth.user) {
     return null;
   }
 

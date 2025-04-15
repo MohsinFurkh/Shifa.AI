@@ -5,8 +5,8 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { PaperAirplaneIcon, PaperClipIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
-export default function ChatPage() {
-  const { user } = useAuth();
+export default function PatientChatPage() {
+  const auth = useAuth();
   const [activeChat, setActiveChat] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -142,7 +142,7 @@ export default function ChatPage() {
     }, 1500);
   };
 
-  if (!user) {
+  if (!auth || !auth.user) {
     return null;
   }
 

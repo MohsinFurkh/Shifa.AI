@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 
-export default function SymptomCheckerPage() {
-  const { user } = useAuth();
+export default function PatientSymptomCheckerPage() {
+  const auth = useAuth();
   const [loading, setLoading] = useState(false);
   const [symptoms, setSymptoms] = useState('');
   const [results, setResults] = useState(null);
@@ -46,7 +46,7 @@ export default function SymptomCheckerPage() {
     }, 1000);
   };
 
-  if (!user) {
+  if (!auth || !auth.user) {
     return null;
   }
 
