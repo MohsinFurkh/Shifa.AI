@@ -1,21 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import LoginForm from '../../components/LoginForm';
 
-export const metadata = {
-  title: 'Login - ShifaAI',
-  description: 'Login to your ShifaAI account',
-};
-
 export default function LoginPage() {
-  const router = useRouter();
   const [error, setError] = useState('');
 
   const handleLoginSuccess = () => {
-    router.push('/dashboard');
+    // Redirect will be handled by the LoginForm component
+  };
+
+  const handleLoginError = (errorMessage) => {
+    setError(errorMessage);
   };
 
   return (
@@ -35,11 +32,11 @@ export default function LoginPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
-              {error}
+            <div className="mb-4 rounded-md bg-red-50 p-4">
+              <div className="text-sm text-red-700">{error}</div>
             </div>
           )}
-          <LoginForm onSuccess={handleLoginSuccess} onError={setError} />
+          <LoginForm onSuccess={handleLoginSuccess} onError={handleLoginError} />
         </div>
       </div>
     </div>
