@@ -26,7 +26,7 @@ const quickActions = [
   { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker', icon: ClipboardDocumentListIcon, color: 'bg-blue-500' },
   { name: 'Book Appointment', href: '/dashboard/patient/appointments', icon: CalendarIcon, color: 'bg-purple-500' },
   { name: 'Chat with Doctor', href: '/dashboard/patient/chat', icon: ChatBubbleBottomCenterTextIcon, color: 'bg-green-500' },
-  { name: 'Find a Doctor', href: '/dashboard/patient/find-doctor', icon: UserPlusIcon, color: 'bg-orange-500' },
+  { name: 'Find a Doctor', href: '/dashboard/patient/find-doctors', icon: UserPlusIcon, color: 'bg-orange-500' },
   { name: 'AI Health Insights', href: '/dashboard/patient/analytics', icon: ChartBarIcon, color: 'bg-teal-500' },
   { name: 'Upload Report', href: '/dashboard/patient/upload-report', icon: DocumentArrowUpIcon, color: 'bg-yellow-500' },
   { name: 'My Records', href: '/dashboard/patient/records', icon: DocumentTextIcon, color: 'bg-indigo-500' },
