@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "../../../../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import { FaUserEdit, FaIdCard, FaPhone, FaEnvelope, FaBirthdayCake, FaTransgender, FaMapMarkerAlt, FaWeight, FaRulerVertical } from "react-icons/fa";
 
@@ -25,7 +25,7 @@ export default function ProfilePage() {
   useEffect(() => {
     // First try to get the latest user data from localStorage
     try {
-      const storedUser = localStorage.getItem('user');
+      const storedUser = localStorage.getItem('shifaai_user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser && parsedUser.email) {

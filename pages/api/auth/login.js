@@ -13,9 +13,9 @@ export default async function handler(req, res) {
   try {
     await dbConnect();
     
-    const { email, password } = req.body;
+    const { email, password, userType } = req.body;
     
-    console.log('Login attempt:', { email });
+    console.log('Login attempt:', { email, userType });
     
     // Find user by email in database
     const user = await User.findOne({ email });
@@ -27,9 +27,13 @@ export default async function handler(req, res) {
       passwordInDB: user.password ? 'exists' : 'none'
     } : 'No user found');
     
-    // Check if user exists (no longer checking userType)
-    if (!user) {
-      console.log('User not found:', email);
+    // Check if user exists and is of the correct type
+    if (!user || user.userType !== userType) {
+      console.log('User type mismatch or user not found:', { 
+        userFound: !!user, 
+        requestedType: userType, 
+        actualType: user?.userType 
+      });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
@@ -45,10 +49,10 @@ export default async function handler(req, res) {
     const token = generateToken({
       id: user._id,
       email: user.email,
-      userType: user.userType // Still include the actual userType in the token
+      userType: user.userType
     });
     
-    console.log('Login successful for:', { email, userType: user.userType });
+    console.log('Login successful for:', { email, userType });
     
     // Return user data and token
     return res.status(200).json({
@@ -57,7 +61,7 @@ export default async function handler(req, res) {
         id: user._id,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
-        type: user.userType, // Return actual user type for role-based UI
+        type: user.userType,
         token
       }
     });

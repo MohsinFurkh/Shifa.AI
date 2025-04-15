@@ -11,7 +11,7 @@ export default function RegisterForm() {
     email: '',
     password: '',
     confirmPassword: '',
-    userType: 'user', // Default to user
+    userType: 'patient', // Default to patient
     agreeToTerms: false,
   });
 
@@ -116,13 +116,6 @@ export default function RegisterForm() {
       });
       setIsSubmitting(false);
     }
-  };
-
-  const handleGoogleSignup = () => {
-    // Implement Google sign up functionality
-    console.log('Google signup clicked');
-    // This would typically redirect to Google OAuth endpoint
-    alert('Google sign up functionality will be implemented with OAuth');
   };
 
   return (
@@ -250,6 +243,25 @@ export default function RegisterForm() {
         </div>
       </div>
 
+      <div>
+        <label htmlFor="userType" className="block text-sm font-medium text-gray-700">
+          I am a
+        </label>
+        <div className="mt-1">
+          <select
+            id="userType"
+            name="userType"
+            className="block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+            value={formData.userType}
+            onChange={handleChange}
+          >
+            <option value="patient">Patient</option>
+            <option value="doctor">Doctor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+
       <div className="flex items-center">
         <input
           id="agreeToTerms"
@@ -284,45 +296,6 @@ export default function RegisterForm() {
         >
           {isSubmitting ? 'Creating account...' : 'Create account'}
         </button>
-      </div>
-
-      <div className="mt-6">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">Or sign up with</span>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={handleGoogleSignup}
-            className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-          >
-            <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
-              <path
-                d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0353 3.12C17.9503 1.89 15.2353 1 12.0003 1C7.31028 1 3.25527 3.84 1.28027 7.65L5.27028 10.71C6.29028 7.28 8.91528 4.75 12.0003 4.75Z"
-                fill="#EA4335"
-              />
-              <path
-                d="M23.49 12.27C23.49 11.48 23.42 10.73 23.3 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.95 21.1C22.18 19.01 23.49 15.92 23.49 12.27Z"
-                fill="#4285F4"
-              />
-              <path
-                d="M5.26998 14.29C5.02998 13.57 4.89999 12.8 4.89999 12C4.89999 11.2 5.02998 10.43 5.26998 9.71001L1.28 6.65C0.47 8.3 0 10.1 0 12C0 13.9 0.47 15.7 1.28 17.35L5.26998 14.29Z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12.0004 23C15.2404 23 17.9604 22.01 19.9504 20.11L16.0804 17.1C15.0054 17.9 13.6204 18.42 12.0004 18.42C8.91544 18.42 6.29044 15.89 5.27044 12.46L1.27045 15.56C3.25045 19.38 7.31044 23 12.0004 23Z"
-                fill="#34A853"
-              />
-            </svg>
-            <span className="text-sm font-medium">Sign up with Google</span>
-          </button>
-        </div>
       </div>
     </form>
   );

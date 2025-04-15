@@ -3,93 +3,89 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 
-export default function LoginForm({ onSuccess, onError }) {
+export default function LoginForm() {
   const { login } = useAuth();
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [userType, setUserType] = useState('patient');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    onError('');
-
+    
     try {
+      // Use the new API endpoint path
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
-          userType: 'user' // Default user type
+          email,
+          password,
+          userType,
         }),
       });
 
       const data = await response.json();
-
+      
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Check for existing user data in localStorage
-      const existingUserData = localStorage.getItem('userData');
-      let userData = data.user;
-
+      // Check if user data already exists in localStorage to preserve profile data
+      const existingUserData = localStorage.getItem('shifaai_user');
+      let savedUserData = null;
+      
       if (existingUserData) {
-        const existingData = JSON.parse(existingUserData);
-        // Preserve existing health metrics and other important data
-        userData = {
-          ...userData,
-          healthMetrics: existingData.healthMetrics || userData.healthMetrics,
-          appointments: existingData.appointments || userData.appointments,
-          consultations: existingData.consultations || userData.consultations,
-        };
-      }
-
-      // Save user data to localStorage
-      localStorage.setItem('userData', JSON.stringify(userData));
-
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        // Default redirect based on user type
-        switch (userData.userType) {
-          case 'admin':
-            router.push('/dashboard/admin');
-            break;
-          case 'doctor':
-            router.push('/dashboard/doctor');
-            break;
-          default:
-            router.push('/dashboard/patient');
+        try {
+          const parsedData = JSON.parse(existingUserData);
+          // If this is the same user (by email and type), preserve their data
+          if (parsedData.email === data.data.email && parsedData.type === data.data.type) {
+            savedUserData = parsedData;
+          }
+        } catch (e) {
+          console.error("Error parsing existing user data", e);
         }
       }
-    } catch (error) {
-      onError(error.message || 'An error occurred during login');
-    } finally {
+      
+      // Create user data object, preserving existing data if available
+      const userData = {
+        id: data.data.id,
+        email: data.data.email,
+        name: data.data.name || (savedUserData?.name || ''),
+        type: data.data.type,
+        token: data.data.token,
+        // Preserve health metrics and profile data
+        bloodPressure: savedUserData?.bloodPressure || '',
+        heartRate: savedUserData?.heartRate || '',
+        glucoseLevel: savedUserData?.glucoseLevel || '',
+        height: savedUserData?.height || '',
+        weight: savedUserData?.weight || '',
+        lastMetricsUpdate: savedUserData?.lastMetricsUpdate || '',
+        dateOfBirth: savedUserData?.dateOfBirth || '',
+        gender: savedUserData?.gender || '',
+        bloodType: savedUserData?.bloodType || '',
+        allergies: savedUserData?.allergies || '',
+        medicalConditions: savedUserData?.medicalConditions || '',
+        medications: savedUserData?.medications || '',
+        phone: savedUserData?.phone || '',
+        // Preserve appointments if they exist
+        appointments: savedUserData?.appointments || [],
+        // Preserve reports if they exist
+        reports: savedUserData?.reports || []
+      };
+      
+      // Login the user with the combined data
+      login(userData);
+    } catch (err) {
+      setError(err.message || 'Failed to login. Please check your credentials.');
       setLoading(false);
     }
-  };
-
-  const handleGoogleLogin = () => {
-    // Implement Google login functionality
-    console.log('Google login clicked');
-    // This would typically redirect to Google OAuth endpoint
-    alert('Google login functionality will be implemented with OAuth');
   };
 
   return (
@@ -102,54 +98,87 @@ export default function LoginForm({ onSuccess, onError }) {
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white px-6 py-8 shadow sm:rounded-lg sm:px-12">
-          {onError && (
+          {error && (
             <div className="mb-4 rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{onError}</div>
+              <div className="text-sm text-red-700">{error}</div>
             </div>
           )}
           
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
                 Email address
               </label>
-              <div className="mt-1">
+              <div className="mt-2">
                 <input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
                 Password
               </label>
-              <div className="mt-1">
+              <div className="mt-2">
                 <input
                   id="password"
                   name="password"
                   type="password"
                   autoComplete="current-password"
                   required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
+                  placeholder="Enter your password"
                 />
               </div>
             </div>
 
+            <div>
+              <label htmlFor="user-type" className="block text-sm font-medium leading-6 text-gray-900">
+                User Type
+              </label>
+              <div className="mt-2">
+                <select
+                  id="user-type"
+                  name="user-type"
+                  value={userType}
+                  onChange={(e) => setUserType(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
+                >
+                  <option value="patient">Patient</option>
+                  <option value="doctor">Doctor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                  Forgot your password?
-                </Link>
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
+                />
+                <label htmlFor="remember-me" className="ml-3 block text-sm leading-6 text-gray-900">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm leading-6">
+                <a href="#" className="font-semibold text-primary-600 hover:text-primary-500">
+                  Forgot password?
+                </a>
               </div>
             </div>
 
@@ -157,7 +186,7 @@ export default function LoginForm({ onSuccess, onError }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                className="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-75"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
@@ -174,10 +203,9 @@ export default function LoginForm({ onSuccess, onError }) {
               </div>
             </div>
 
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <a
+                href="#"
                 className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
               >
                 <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
@@ -198,8 +226,22 @@ export default function LoginForm({ onSuccess, onError }) {
                     fill="#34A853"
                   />
                 </svg>
-                <span className="text-sm font-medium">Sign in with Google</span>
-              </button>
+                <span className="text-sm font-medium">Google</span>
+              </a>
+
+              <a
+                href="#"
+                className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+              >
+                <svg className="h-5 w-5 fill-[#24292F]" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-sm font-medium">GitHub</span>
+              </a>
             </div>
           </div>
         </div>

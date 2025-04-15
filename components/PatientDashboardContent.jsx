@@ -26,7 +26,7 @@ const quickActions = [
   { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker', icon: ClipboardDocumentListIcon, color: 'bg-blue-500' },
   { name: 'Book Appointment', href: '/dashboard/patient/appointments', icon: CalendarIcon, color: 'bg-purple-500' },
   { name: 'Chat with Doctor', href: '/dashboard/patient/chat', icon: ChatBubbleBottomCenterTextIcon, color: 'bg-green-500' },
-  { name: 'Find a Doctor', href: '/dashboard/patient/find-doctors', icon: UserPlusIcon, color: 'bg-orange-500' },
+  { name: 'Find a Doctor', href: '/dashboard/patient/find-doctor', icon: UserPlusIcon, color: 'bg-orange-500' },
   { name: 'AI Health Insights', href: '/dashboard/patient/analytics', icon: ChartBarIcon, color: 'bg-teal-500' },
   { name: 'Upload Report', href: '/dashboard/patient/upload-report', icon: DocumentArrowUpIcon, color: 'bg-yellow-500' },
   { name: 'My Records', href: '/dashboard/patient/records', icon: DocumentTextIcon, color: 'bg-indigo-500' },
@@ -67,7 +67,7 @@ const doctorsBySpecialty = {
   // Add more doctors for other specialties as needed
 };
 
-export default function UserDashboardContent() {
+export default function PatientDashboardContent() {
   const { user } = useAuth();
   // Add state for health metrics, appointments, and reports
   const [healthMetrics, setHealthMetrics] = useState([]);
@@ -89,7 +89,7 @@ export default function UserDashboardContent() {
         try {
           // Try to get the most up-to-date data from localStorage first
           let userData = user;
-          const storedUserData = localStorage.getItem('user');
+          const storedUserData = localStorage.getItem('shifaai_user');
           
           if (storedUserData) {
             try {
@@ -348,7 +348,7 @@ export default function UserDashboardContent() {
     <div>
       {/* Dashboard header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">User Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Patient Dashboard</h1>
         <p className="mt-2 text-sm text-gray-600">
           Welcome back, {firstName}! Here's your health overview.
         </p>
