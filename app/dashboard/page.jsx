@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { CalendarDaysIcon, ClockIcon, UserIcon, BellIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const auth = useAuth();
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,14 +42,14 @@ export default function DashboardPage() {
     }, 1000);
   }, []);
 
-  if (!user) {
+  if (!auth || !auth.user) {
     return null;
   }
 
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Welcome, {user.name}</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">Welcome, {auth.user.name}</h1>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
