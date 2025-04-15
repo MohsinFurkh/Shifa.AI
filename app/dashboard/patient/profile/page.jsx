@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import { toast } from "react-hot-toast";
 import { FaUserEdit, FaIdCard, FaPhone, FaEnvelope, FaBirthdayCake, FaTransgender, FaMapMarkerAlt, FaWeight, FaRulerVertical } from "react-icons/fa";
+import DashboardLayout from '../../../../components/DashboardLayout';
 
-export default function ProfilePage() {
-  const { user, updateProfile } = useAuth();
+export default function PatientProfilePage() {
+  const auth = useAuth();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
@@ -51,22 +52,22 @@ export default function ProfilePage() {
     }
 
     // Fallback to context user if localStorage fails
-    if (user) {
+    if (auth && auth.user) {
       setFormData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        gender: user.gender || "",
-        dateOfBirth: user.dateOfBirth || "",
-        address: user.address || "",
-        height: user.height || "",
-        weight: user.weight || "",
-        bloodGroup: user.bloodGroup || "",
-        allergies: user.allergies || []
+        name: auth.user.name || "",
+        email: auth.user.email || "",
+        phone: auth.user.phone || "",
+        gender: auth.user.gender || "",
+        dateOfBirth: auth.user.dateOfBirth || "",
+        address: auth.user.address || "",
+        height: auth.user.height || "",
+        weight: auth.user.weight || "",
+        bloodGroup: auth.user.bloodGroup || "",
+        allergies: auth.user.allergies || []
       });
     }
     setLoading(false);
-  }, [user]);
+  }, [auth]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,13 +84,13 @@ export default function ProfilePage() {
     e.preventDefault();
     try {
       // Update profile with form data
-      await updateProfile({
+      await auth.updateProfile({
         ...formData,
         // Ensure we keep any health metrics that might be stored
-        bloodPressure: user?.bloodPressure,
-        heartRate: user?.heartRate,
-        glucoseLevel: user?.glucoseLevel,
-        lastMetricsUpdate: user?.lastMetricsUpdate
+        bloodPressure: auth.user?.bloodPressure,
+        heartRate: auth.user?.heartRate,
+        glucoseLevel: auth.user?.glucoseLevel,
+        lastMetricsUpdate: auth.user?.lastMetricsUpdate
       });
       
       toast.success("Profile updated successfully!");
@@ -99,6 +100,10 @@ export default function ProfilePage() {
       console.error("Error updating profile:", error);
     }
   };
+
+  if (!auth || !auth.user) {
+    return null;
+  }
 
   if (loading) {
     return (

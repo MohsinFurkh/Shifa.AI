@@ -15,8 +15,8 @@ import {
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
-export default function ConsultationsPage() {
-  const { user } = useAuth();
+export default function PatientConsultationsPage() {
+  const auth = useAuth();
   const [loading, setLoading] = useState(true);
   const [consultations, setConsultations] = useState([]);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
@@ -160,7 +160,7 @@ export default function ConsultationsPage() {
     return true;
   });
 
-  if (!user) {
+  if (!auth || !auth.user) {
     return null;
   }
 
