@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { PaperAirplaneIcon, PaperClipIcon, UserCircleIcon, ClockIcon, ChatBubbleLeftRightIcon, ShieldCheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import { BrainIcon, BeakerIcon } from '@heroicons/react/24/solid';
+import { BeakerIcon, UserIcon } from '@heroicons/react/24/solid';
 
 export default function ChatPage() {
   const { user } = useAuth();
@@ -252,7 +252,7 @@ export default function ChatPage() {
                         className={`w-full flex items-center p-4 border ${chatMode === 'personal' ? 'border-primary-500 bg-primary-50' : 'border-gray-200'} rounded-lg hover:bg-gray-50`}
                       >
                         <div className="bg-blue-100 rounded-full p-2">
-                          <BrainIcon className="h-6 w-6 text-blue-600" />
+                          <UserIcon className="h-6 w-6 text-blue-600" />
                         </div>
                         <div className="ml-3 text-left">
                           <h3 className="font-medium text-gray-800">Personal AI Doctor</h3>
@@ -424,7 +424,7 @@ export default function ChatPage() {
                         onClick={() => handleSelectChatMode('personal')}
                         className="inline-flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
                       >
-                        <BrainIcon className="h-5 w-5 mr-2" />
+                        <UserIcon className="h-5 w-5 mr-2" />
                         Personal AI Doctor
                       </button>
                       <button

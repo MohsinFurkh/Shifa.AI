@@ -3,21 +3,30 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 
-export default function LoginForm() {
+export default function LoginForm({ onSuccess, onError }) {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
   const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
-    
+    onError('');
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -25,48 +34,52 @@ export default function LoginForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
-          password,
-          userType: 'user' // Default to 'user' for all logins
+          ...formData,
+          userType: 'user' // Default user type
         }),
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Check if there's existing user data in localStorage to preserve it
-      const existingUserData = localStorage.getItem('user') 
-        ? JSON.parse(localStorage.getItem('user')) 
-        : null;
-      
-      // Merge new data with existing data (if any)
-      const userData = {
-        ...data.data,
-        // Preserve health metrics and other profile data if it exists
-        ...(existingUserData && {
-          healthMetrics: existingUserData.healthMetrics,
-          profile: existingUserData.profile,
-        }),
-      };
+      // Check for existing user data in localStorage
+      const existingUserData = localStorage.getItem('userData');
+      let userData = data.user;
 
-      // Update localStorage with user data
-      localStorage.setItem('user', JSON.stringify(userData));
-      login(userData);
+      if (existingUserData) {
+        const existingData = JSON.parse(existingUserData);
+        // Preserve existing health metrics and other important data
+        userData = {
+          ...userData,
+          healthMetrics: existingData.healthMetrics || userData.healthMetrics,
+          appointments: existingData.appointments || userData.appointments,
+          consultations: existingData.consultations || userData.consultations,
+        };
+      }
 
-      // Redirect based on user type
-      if (userData.type === 'admin') {
-        router.push('/dashboard/admin');
-      } else if (userData.type === 'doctor') {
-        router.push('/dashboard/doctor');
+      // Save user data to localStorage
+      localStorage.setItem('userData', JSON.stringify(userData));
+
+      if (onSuccess) {
+        onSuccess();
       } else {
-        router.push('/dashboard/patient');
+        // Default redirect based on user type
+        switch (userData.userType) {
+          case 'admin':
+            router.push('/dashboard/admin');
+            break;
+          case 'doctor':
+            router.push('/dashboard/doctor');
+            break;
+          default:
+            router.push('/dashboard/patient');
+        }
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError(error.message || 'Invalid credentials');
+      onError(error.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }
@@ -89,59 +102,54 @@ export default function LoginForm() {
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white px-6 py-8 shadow sm:rounded-lg sm:px-12">
-          {error && (
+          {onError && (
             <div className="mb-4 rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+              <div className="text-sm text-red-700">{onError}</div>
             </div>
           )}
           
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="form-group mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
               </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="your@email.com"
-              />
+              <div className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
             </div>
 
-            <div className="form-group mb-6">
-              <div className="flex justify-between mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-500">
-                  Forgot password?
-                </Link>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
               </div>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="••••••••"
-              />
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
-                />
-                <label htmlFor="remember-me" className="ml-3 block text-sm leading-6 text-gray-900">
-                  Remember me
-                </label>
+              <div className="text-sm">
+                <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                  Forgot your password?
+                </Link>
               </div>
             </div>
 
@@ -149,7 +157,7 @@ export default function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-75"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
