@@ -1,8 +1,8 @@
 export const metadata = {
-  title: 'Redirecting to User Dashboard - ShifaAI',
-  description: 'Redirecting to User Dashboard',
+  title: 'Patient Dashboard - ShifaAI',
+  description: 'Manage your health with ShifaAI\'s intelligent diagnostics and personalized recommendations',
 };
 
-export default function PatientRedirectLayout({ children }) {
+export default function PatientDashboardLayout({ children }) {
   return children;
 } 

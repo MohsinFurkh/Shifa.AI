@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function RegisterForm() {
@@ -12,7 +11,7 @@ export default function RegisterForm() {
     email: '',
     password: '',
     confirmPassword: '',
-    userType: 'user', // Changed from 'patient' to 'user'
+    userType: 'patient', // Default to patient
     agreeToTerms: false,
   });
 
@@ -252,11 +251,11 @@ export default function RegisterForm() {
           <select
             id="userType"
             name="userType"
+            className="block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
             value={formData.userType}
             onChange={handleChange}
-            className="block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
           >
-            <option value="user">User</option>
+            <option value="patient">Patient</option>
             <option value="doctor">Doctor</option>
             <option value="admin">Admin</option>
           </select>

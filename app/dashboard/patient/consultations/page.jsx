@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '/contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { 
   CalendarDaysIcon, 
@@ -15,8 +15,8 @@ import {
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
-export default function PatientConsultationsPage() {
-  const auth = useAuth();
+export default function ConsultationsPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [consultations, setConsultations] = useState([]);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
@@ -160,7 +160,7 @@ export default function PatientConsultationsPage() {
     return true;
   });
 
-  if (!auth || !auth.user) {
+  if (!user) {
     return null;
   }
 
@@ -389,4 +389,3 @@ export default function PatientConsultationsPage() {
     </DashboardLayout>
   );
 } 
-

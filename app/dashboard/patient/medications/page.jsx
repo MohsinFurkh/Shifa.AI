@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '/contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { ClockIcon, PlusIcon, XMarkIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
-export default function PatientMedicationsPage() {
-  const auth = useAuth();
+export default function MedicationsPage() {
+  const { user } = useAuth();
   const [medications, setMedications] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -131,7 +131,7 @@ export default function PatientMedicationsPage() {
 
   const todayReminders = getTodayReminders();
 
-  if (!auth || !auth.user) {
+  if (!user) {
     return null;
   }
 
@@ -462,4 +462,3 @@ export default function PatientMedicationsPage() {
     </DashboardLayout>
   );
 } 
-

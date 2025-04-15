@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from 'react';
-import { useAuth } from '/contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 
-export default function PatientSymptomCheckerPage() {
-  const auth = useAuth();
+export default function SymptomCheckerPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [symptoms, setSymptoms] = useState('');
   const [results, setResults] = useState(null);
@@ -46,7 +46,7 @@ export default function PatientSymptomCheckerPage() {
     }, 1000);
   };
 
-  if (!auth || !auth.user) {
+  if (!user) {
     return null;
   }
 
@@ -129,4 +129,3 @@ export default function PatientSymptomCheckerPage() {
     </DashboardLayout>
   );
 } 
-

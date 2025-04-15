@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '/contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { CalendarDaysIcon, ClockIcon, UserIcon, XMarkIcon, ArrowPathIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
-export default function PatientAppointmentsPage() {
-  const auth = useAuth();
+export default function AppointmentsPage() {
+  const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [appointments, setAppointments] = useState([]);
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -39,9 +39,9 @@ export default function PatientAppointmentsPage() {
     const fetchAppointments = async () => {
       setLoading(true);
       try {
-        if (auth && auth.user) {
+        if (user) {
           // Get the MongoDB ID (could be in _id or id field)
-          const userId = auth.user._id || auth.user.id;
+          const userId = user._id || user.id;
           
           // Fetch appointments from the server
           const response = await fetch(`/api/patient/appointments?userId=${userId}`);
@@ -51,13 +51,13 @@ export default function PatientAppointmentsPage() {
             setAppointments(data || []);
           } else {
             // Fallback to localStorage if API call fails
-            let userData = auth.user;
+            let userData = user;
             const storedUserData = localStorage.getItem('shifaai_user');
             
             if (storedUserData) {
               try {
                 const parsedData = JSON.parse(storedUserData);
-                if (parsedData.email === auth.user.email && parsedData.id === auth.user.id) {
+                if (parsedData.email === user.email && parsedData.id === user.id) {
                   userData = parsedData;
                 }
               } catch (e) {
@@ -71,7 +71,7 @@ export default function PatientAppointmentsPage() {
       } catch (error) {
         console.error('Error fetching appointments:', error);
         // Fallback to localStorage
-        if (auth && auth.user) {
+        if (user) {
           const storedUserData = localStorage.getItem('shifaai_user');
           if (storedUserData) {
             try {
@@ -88,7 +88,7 @@ export default function PatientAppointmentsPage() {
     };
     
     fetchAppointments();
-  }, [auth]);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -115,12 +115,12 @@ export default function PatientAppointmentsPage() {
       const selectedDoctor = sampleDoctors.find(doc => doc.id === parseInt(formData.doctorId));
 
       // Get the MongoDB ID (could be in _id or id field)
-      const userId = auth.user._id || auth.user.id;
+      const userId = user._id || user.id;
 
       // Create new appointment data
       const appointmentData = {
         patientId: userId,
-        patientName: auth.user.name,
+        patientName: user.name,
         doctorName: selectedDoctor.name,
         doctorSpecialty: selectedDoctor.specialty,
         date: formData.date,
@@ -150,7 +150,7 @@ export default function PatientAppointmentsPage() {
       
       // Also update in user profile for backward compatibility
       const updatedAppointments = [...appointments, newAppointment];
-      auth.updateProfile({ appointments: updatedAppointments });
+      updateProfile({ appointments: updatedAppointments });
 
       // Reset form
       setShowBookingForm(false);
@@ -213,7 +213,7 @@ export default function PatientAppointmentsPage() {
       setAppointments(updatedAppointments);
       
       // Also update in user profile for backward compatibility
-      auth.updateProfile({ appointments: updatedAppointments });
+      updateProfile({ appointments: updatedAppointments });
       
       setShowCancelModal(false);
     } catch (error) {
@@ -257,7 +257,7 @@ export default function PatientAppointmentsPage() {
       setAppointments(updatedAppointments);
       
       // Also update in user profile for backward compatibility
-      auth.updateProfile({ appointments: updatedAppointments });
+      updateProfile({ appointments: updatedAppointments });
       
       setShowRescheduleModal(false);
     } catch (error) {
@@ -273,7 +273,7 @@ export default function PatientAppointmentsPage() {
     (appointment) => appointment.status === activeTab
   );
 
-  if (!auth || !auth.user) {
+  if (!user) {
     return null;
   }
 
@@ -590,4 +590,3 @@ export default function PatientAppointmentsPage() {
     </DashboardLayout>
   );
 } 
-
