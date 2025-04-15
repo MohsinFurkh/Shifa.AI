@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth } from '/contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaGraduationCap, FaBriefcase, FaCalendarAlt, FaEdit } from 'react-icons/fa';
 
@@ -306,3 +306,4 @@ export default function DoctorProfilePage() {
     </DashboardLayout>
   );
 } 
+

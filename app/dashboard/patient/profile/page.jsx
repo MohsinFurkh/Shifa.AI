@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth } from '/contexts/AuthContext';
 import { toast } from "react-hot-toast";
 import { FaUserEdit, FaIdCard, FaPhone, FaEnvelope, FaBirthdayCake, FaTransgender, FaMapMarkerAlt, FaWeight, FaRulerVertical } from "react-icons/fa";
 import DashboardLayout from '../../../../components/DashboardLayout';
@@ -305,3 +305,4 @@ function ProfileItem({ icon, label, value }) {
     </div>
   );
 } 
+

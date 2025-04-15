@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth } from '/contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { 
   ChartBarIcon, 
@@ -450,3 +450,4 @@ export default function PatientAnalyticsPage() {
     </DashboardLayout>
   );
 } 
+

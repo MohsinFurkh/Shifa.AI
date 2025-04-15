@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth } from '/contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 import { PaperAirplaneIcon, PaperClipIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 

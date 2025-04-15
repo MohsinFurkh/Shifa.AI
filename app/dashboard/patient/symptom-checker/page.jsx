@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth } from '/contexts/AuthContext';
 import DashboardLayout from '../../../../components/DashboardLayout';
 
 export default function PatientSymptomCheckerPage() {
@@ -129,3 +129,4 @@ export default function PatientSymptomCheckerPage() {
     </DashboardLayout>
   );
 } 
+
