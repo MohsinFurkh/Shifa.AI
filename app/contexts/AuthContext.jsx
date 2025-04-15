@@ -37,17 +37,24 @@ export const AuthProvider = ({ children }) => {
 
     // If logged in user is on the wrong dashboard type
     if (user) {
+      const inUserDashboard = pathname.startsWith('/dashboard/user');
       const inPatientDashboard = pathname.startsWith('/dashboard/patient');
       const inDoctorDashboard = pathname.startsWith('/dashboard/doctor');
       const inAdminDashboard = pathname.startsWith('/dashboard/admin');
       
       // Redirect if wrong dashboard
-      if (user.type === 'patient' && (inDoctorDashboard || inAdminDashboard)) {
-        router.push('/dashboard/patient');
-      } else if (user.type === 'doctor' && (inPatientDashboard || inAdminDashboard)) {
+      if ((user.type === 'user' || user.type === 'patient') && (inDoctorDashboard || inAdminDashboard)) {
+        router.push('/dashboard/user');
+      } else if (user.type === 'doctor' && (inUserDashboard || inPatientDashboard || inAdminDashboard)) {
         router.push('/dashboard/doctor');
-      } else if (user.type === 'admin' && (inPatientDashboard || inDoctorDashboard)) {
+      } else if (user.type === 'admin' && (inUserDashboard || inPatientDashboard || inDoctorDashboard)) {
         router.push('/dashboard/admin');
+      }
+      
+      // Redirect legacy patient dashboard to user dashboard
+      if (inPatientDashboard) {
+        const newPath = pathname.replace('/dashboard/patient', '/dashboard/user');
+        router.push(newPath);
       }
     }
   }, [user, loading, pathname, router]);
@@ -103,15 +110,20 @@ export const AuthProvider = ({ children }) => {
       ...existingUserData  // Merge existing data with new login data
     };
     
+    // Convert 'patient' type to 'user' type for consistency
+    if (userWithToken.type === 'patient') {
+      userWithToken.type = 'user';
+    }
+    
     setUser(userWithToken);
     localStorage.setItem('shifaai_user', JSON.stringify(userWithToken));
     
     // Redirect based on user type
-    if (userData.type === 'patient') {
-      router.push('/dashboard/patient');
-    } else if (userData.type === 'doctor') {
+    if (userWithToken.type === 'user' || userWithToken.type === 'patient') {
+      router.push('/dashboard/user');
+    } else if (userWithToken.type === 'doctor') {
       router.push('/dashboard/doctor');
-    } else if (userData.type === 'admin') {
+    } else if (userWithToken.type === 'admin') {
       router.push('/dashboard/admin');
     }
   };

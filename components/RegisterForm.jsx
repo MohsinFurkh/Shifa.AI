@@ -11,7 +11,7 @@ export default function RegisterForm() {
     email: '',
     password: '',
     confirmPassword: '',
-    userType: 'patient', // Default to patient
+    userType: 'user', // Changed from 'patient' to 'user'
     agreeToTerms: false,
   });
 

@@ -1,19 +1,22 @@
 "use client";
 
-import { useAuth } from '../../../contexts/AuthContext';
-import DashboardLayout from '../../../components/DashboardLayout';
-import PatientDashboardContent from '../../../components/PatientDashboardContent';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function PatientDashboardPage() {
-  const { user } = useAuth();
+export default function PatientRedirectPage() {
+  const router = useRouter();
   
-  if (!user) {
-    return null;
-  }
+  useEffect(() => {
+    // Redirect to the user dashboard
+    router.replace('/dashboard/user');
+  }, [router]);
   
   return (
-    <DashboardLayout>
-      <PatientDashboardContent />
-    </DashboardLayout>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+        <p className="text-gray-500">Redirecting to User Dashboard...</p>
+      </div>
+    </div>
   );
 } 

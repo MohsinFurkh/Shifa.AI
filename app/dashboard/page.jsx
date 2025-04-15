@@ -93,7 +93,7 @@ export default function DashboardPage() {
           <div className="px-6 py-4 bg-primary-100 flex justify-between items-center">
             <h2 className="text-xl font-bold text-primary-800">Upcoming Appointments</h2>
             <a 
-              href="/dashboard/patient/appointments" 
+              href="/dashboard/user/appointments" 
               className="text-primary-600 hover:text-primary-800 text-sm font-medium"
             >
               View All
@@ -131,13 +131,13 @@ export default function DashboardPage() {
                     </div>
                     <div className="mt-4 flex justify-end">
                       <a 
-                        href={`/dashboard/patient/appointments?action=reschedule&id=${appointment.id}`}
+                        href={`/dashboard/user/appointments?action=reschedule&id=${appointment.id}`}
                         className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition mr-2"
                       >
                         Reschedule
                       </a>
                       <a 
-                        href={`/dashboard/patient/appointments?action=cancel&id=${appointment.id}`}
+                        href={`/dashboard/user/appointments?action=cancel&id=${appointment.id}`}
                         className="px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition"
                       >
                         Cancel
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                 <ExclamationCircleIcon className="h-12 w-12 text-gray-400 mb-2" />
                 <p className="text-gray-500">No upcoming appointments found</p>
                 <a 
-                  href="/dashboard/patient/appointments" 
+                  href="/dashboard/user/appointments" 
                   className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
                 >
                   Book Appointment
