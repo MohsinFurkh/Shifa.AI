@@ -348,9 +348,9 @@ export default function PatientDashboardContent() {
     <div>
       {/* Dashboard header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Patient Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{firstName}'s Dashboard</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Welcome back, {firstName}! Here's your health overview.
+          Welcome, {firstName}! Here's your health overview.
         </p>
       </div>
 
