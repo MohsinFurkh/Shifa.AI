@@ -89,7 +89,7 @@ export default function UserDashboardContent() {
         try {
           // Try to get the most up-to-date data from localStorage first
           let userData = user;
-          const storedUserData = localStorage.getItem('shifaai_user');
+          const storedUserData = localStorage.getItem('user');
           
           if (storedUserData) {
             try {

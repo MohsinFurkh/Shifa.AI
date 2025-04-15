@@ -25,7 +25,7 @@ export default function ProfilePage() {
   useEffect(() => {
     // First try to get the latest user data from localStorage
     try {
-      const storedUser = localStorage.getItem('shifaai_user');
+      const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser && parsedUser.email) {

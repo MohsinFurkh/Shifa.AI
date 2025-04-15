@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/router';
 
 export default function LoginForm() {
   const { login } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,7 +19,6 @@ export default function LoginForm() {
     setLoading(true);
     
     try {
-      // Use the new API endpoint path
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -26,7 +27,7 @@ export default function LoginForm() {
         body: JSON.stringify({
           email,
           password,
-          userType: 'user', // Default all logins to 'user' type
+          userType: 'user' // Default to 'user' for all logins
         }),
       });
 
@@ -36,53 +37,37 @@ export default function LoginForm() {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Check if user data already exists in localStorage to preserve profile data
-      const existingUserData = localStorage.getItem('shifaai_user');
-      let savedUserData = null;
+      // Check if there's existing user data in localStorage to preserve it
+      const existingUserData = localStorage.getItem('user') 
+        ? JSON.parse(localStorage.getItem('user')) 
+        : null;
       
-      if (existingUserData) {
-        try {
-          const parsedData = JSON.parse(existingUserData);
-          // If this is the same user (by email and type), preserve their data
-          if (parsedData.email === data.data.email && parsedData.type === data.data.type) {
-            savedUserData = parsedData;
-          }
-        } catch (e) {
-          console.error("Error parsing existing user data", e);
-        }
-      }
-      
-      // Create user data object, preserving existing data if available
+      // Merge new data with existing data (if any)
       const userData = {
-        id: data.data.id,
-        email: data.data.email,
-        name: data.data.name || (savedUserData?.name || ''),
-        type: data.data.type,
-        token: data.data.token,
-        // Preserve health metrics and profile data
-        bloodPressure: savedUserData?.bloodPressure || '',
-        heartRate: savedUserData?.heartRate || '',
-        glucoseLevel: savedUserData?.glucoseLevel || '',
-        height: savedUserData?.height || '',
-        weight: savedUserData?.weight || '',
-        lastMetricsUpdate: savedUserData?.lastMetricsUpdate || '',
-        dateOfBirth: savedUserData?.dateOfBirth || '',
-        gender: savedUserData?.gender || '',
-        bloodType: savedUserData?.bloodType || '',
-        allergies: savedUserData?.allergies || '',
-        medicalConditions: savedUserData?.medicalConditions || '',
-        medications: savedUserData?.medications || '',
-        phone: savedUserData?.phone || '',
-        // Preserve appointments if they exist
-        appointments: savedUserData?.appointments || [],
-        // Preserve reports if they exist
-        reports: savedUserData?.reports || []
+        ...data.data,
+        // Preserve health metrics and other profile data if it exists
+        ...(existingUserData && {
+          healthMetrics: existingUserData.healthMetrics,
+          profile: existingUserData.profile,
+        }),
       };
-      
-      // Login the user with the combined data
+
+      // Update localStorage with user data
+      localStorage.setItem('user', JSON.stringify(userData));
       login(userData);
-    } catch (err) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
+
+      // Redirect based on user type
+      if (userData.type === 'admin') {
+        router.push('/dashboard/admin');
+      } else if (userData.type === 'doctor') {
+        router.push('/dashboard/doctor');
+      } else {
+        router.push('/dashboard/patient');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.message || 'Invalid credentials');
+    } finally {
       setLoading(false);
     }
   };
@@ -111,42 +96,39 @@ export default function LoginForm() {
           )}
           
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                Email address
+            <div className="form-group mb-4">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
               </label>
-              <div className="mt-2">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
-                  placeholder="Enter your email"
-                />
-              </div>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                placeholder="your@email.com"
+              />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
-                Password
-              </label>
-              <div className="mt-2">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
-                  placeholder="Enter your password"
-                />
+            <div className="form-group mb-6">
+              <div className="flex justify-between mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-500">
+                  Forgot password?
+                </Link>
               </div>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                placeholder="••••••••"
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -160,12 +142,6 @@ export default function LoginForm() {
                 <label htmlFor="remember-me" className="ml-3 block text-sm leading-6 text-gray-900">
                   Remember me
                 </label>
-              </div>
-
-              <div className="text-sm leading-6">
-                <Link href="/forgot-password" className="font-semibold text-primary-600 hover:text-primary-500">
-                  Forgot password?
-                </Link>
               </div>
             </div>
 

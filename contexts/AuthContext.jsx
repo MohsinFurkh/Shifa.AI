@@ -9,17 +9,23 @@ const AuthContext = createContext();
 // Custom hook to use auth context
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if there's an existing user session in localStorage on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem('shifaai_user');
+    // Check if user is logged in
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error("Error parsing user data from localStorage", error);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -52,116 +58,32 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user, loading, pathname, router]);
 
-  // Login function
   const login = (userData) => {
-    // Make sure we have the token
-    if (!userData.token) {
-      console.error('Login failed: No token provided');
-      return;
-    }
-
-    // Check if we have existing stored data for this user to preserve
-    let existingUserData = {};
-    const storedUser = localStorage.getItem('shifaai_user');
-    
-    if (storedUser) {
-      try {
-        const parsedData = JSON.parse(storedUser);
-        // Only use stored data if it's for the same user
-        if (parsedData.email === userData.email && 
-            (parsedData.id === userData.id || parsedData._id === userData._id)) {
-          // Extract health metrics and other data we want to preserve
-          const { 
-            bloodPressure, heartRate, glucoseLevel, weight, height,
-            lastMetricsUpdate, healthHistory, appointments, reports,
-            medications, allergies
-          } = parsedData;
-          
-          // Add these properties to our object if they exist
-          existingUserData = {
-            ...(bloodPressure && { bloodPressure }),
-            ...(heartRate && { heartRate }),
-            ...(glucoseLevel && { glucoseLevel }),
-            ...(weight && { weight }),
-            ...(height && { height }),
-            ...(lastMetricsUpdate && { lastMetricsUpdate }),
-            ...(healthHistory && { healthHistory }),
-            ...(appointments && { appointments }),
-            ...(reports && { reports }),
-            ...(medications && { medications }),
-            ...(allergies && { allergies })
-          };
-        }
-      } catch (e) {
-        console.error("Error parsing stored user data during login", e);
-      }
-    }
-    
-    // Save user data with token, preserving existing health data
-    const userWithToken = {
-      ...userData,
-      ...existingUserData  // Merge existing data with new login data
-    };
-    
-    setUser(userWithToken);
-    localStorage.setItem('shifaai_user', JSON.stringify(userWithToken));
-    
-    // Redirect based on user type
-    if (userData.type === 'patient') {
-      router.push('/dashboard/patient');
-    } else if (userData.type === 'doctor') {
-      router.push('/dashboard/doctor');
-    } else if (userData.type === 'admin') {
-      router.push('/dashboard/admin');
-    }
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  // Logout function
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('shifaai_user');
-    router.push('/');
+    localStorage.removeItem('user');
+    // Redirect to login page
+    window.location.href = '/login';
   };
 
-  // Update user profile
-  const updateProfile = (newUserData) => {
-    try {
-      // Get the latest stored user data first to ensure we have the most up-to-date data
-      const storedUser = localStorage.getItem('shifaai_user');
-      let currentUserData = user;
-      
-      if (storedUser) {
-        try {
-          const parsedData = JSON.parse(storedUser);
-          // Only use stored data if it's for the current user
-          if (parsedData.email === user.email && parsedData.id === user.id) {
-            currentUserData = parsedData;
-          }
-        } catch (e) {
-          console.error("Error parsing stored user data", e);
-        }
-      }
-      
-      // Create a new user object with the updated data
-      const updatedUser = { 
-        ...currentUserData, 
-        ...newUserData,
-        // Always preserve token to maintain authentication
-        token: user.token
-      };
-      
-      // Update state and localStorage
-      setUser(updatedUser);
-      localStorage.setItem('shifaai_user', JSON.stringify(updatedUser));
-      
-      // Log success message
-      console.log("Profile updated successfully", updatedUser);
-      
-      return true;
-    } catch (error) {
-      console.error("Error updating profile", error);
-      return false;
-    }
+  const updateProfile = (updatedData) => {
+    // Get the latest user data from localStorage
+    const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // Create updated user object
+    const updatedUser = {
+      ...currentUserData,
+      ...updatedData
+    };
+    
+    // Update state and localStorage
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    return updatedUser;
   };
 
   // Get the auth token
@@ -208,6 +130,6 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export default AuthContext; 

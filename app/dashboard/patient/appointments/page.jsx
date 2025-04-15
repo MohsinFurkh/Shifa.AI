@@ -52,7 +52,7 @@ export default function AppointmentsPage() {
           } else {
             // Fallback to localStorage if API call fails
             let userData = user;
-            const storedUserData = localStorage.getItem('shifaai_user');
+            const storedUserData = localStorage.getItem('user');
             
             if (storedUserData) {
               try {
@@ -72,7 +72,7 @@ export default function AppointmentsPage() {
         console.error('Error fetching appointments:', error);
         // Fallback to localStorage
         if (user) {
-          const storedUserData = localStorage.getItem('shifaai_user');
+          const storedUserData = localStorage.getItem('user');
           if (storedUserData) {
             try {
               const userData = JSON.parse(storedUserData);
