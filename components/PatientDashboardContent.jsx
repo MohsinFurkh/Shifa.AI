@@ -67,7 +67,7 @@ const doctorsBySpecialty = {
   // Add more doctors for other specialties as needed
 };
 
-export default function PatientDashboardContent() {
+export default function UserDashboardContent() {
   const { user } = useAuth();
   // Add state for health metrics, appointments, and reports
   const [healthMetrics, setHealthMetrics] = useState([]);
@@ -348,7 +348,7 @@ export default function PatientDashboardContent() {
     <div>
       {/* Dashboard header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Patient Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">User Dashboard</h1>
         <p className="mt-2 text-sm text-gray-600">
           Welcome back, {firstName}! Here's your health overview.
         </p>
