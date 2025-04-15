@@ -255,7 +255,7 @@ export default function RegisterForm() {
             value={formData.userType}
             onChange={handleChange}
           >
-            <option value="patient">Patient</option>
+            <option value="patient">User</option>
             <option value="doctor">Doctor</option>
             <option value="admin">Admin</option>
           </select>
