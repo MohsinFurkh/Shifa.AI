@@ -1,8 +1,9 @@
 "use client";
 
-import { useAuth } from '../../contexts/AuthContext';
+import { useEffect } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
+import DoctorDashboard from '../../../components/DoctorDashboardContent';
 import DashboardLayout from '../../../components/DashboardLayout';
-import DoctorDashboardContent from '../../../components/DoctorDashboardContent';
 
 export default function DoctorDashboardPage() {
   const auth = useAuth();
@@ -13,7 +14,7 @@ export default function DoctorDashboardPage() {
   
   return (
     <DashboardLayout>
-      <DoctorDashboardContent />
+      <DoctorDashboard />
     </DashboardLayout>
   );
 } 

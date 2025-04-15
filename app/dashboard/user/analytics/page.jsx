@@ -14,8 +14,8 @@ import {
   ArrowTrendingDownIcon 
 } from '@heroicons/react/24/outline';
 
-export default function AnalyticsPage() {
-  const { user } = useAuth();
+export default function UserAnalyticsPage() {
+  const auth = useAuth();
   const [loading, setLoading] = useState(true);
   const [healthMetrics, setHealthMetrics] = useState(null);
   const [appointmentStats, setAppointmentStats] = useState(null);
@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
     }, 1000);
   }, [timeRange]);
 
-  if (!user) {
+  if (!auth || !auth.user) {
     return null;
   }
 
