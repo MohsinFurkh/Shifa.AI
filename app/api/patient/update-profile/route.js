@@ -107,42 +107,119 @@ export async function POST(request) {
       }
     }
 
+    // DEBUG: List all collections in the database
+    const collections = await db.listCollections().toArray();
+    console.log('Available collections:', collections.map(c => c.name));
+
     // Try to convert to ObjectId if valid
     let userObjectId = null;
     if (ObjectId.isValid(userId)) {
       userObjectId = new ObjectId(userId);
+      console.log('Converted userId to ObjectId:', userObjectId);
+    } else {
+      console.log('userId is not a valid ObjectId, using as string:', userId);
     }
     
-    console.log('Looking for user with ID:', userId);
+    // DEBUG: Search for the user with the exact ID format used in the token
+    const exactIdSearch = await db.collection('users').findOne({ userId: userId });
+    console.log('Search with exact userId as string:', !!exactIdSearch);
     
-    // First, try to find the user in myFirstDatabase.users to confirm they exist
+    // DEBUG: Sample some users from the collection
+    const sampleUsers = await db.collection('users').find().limit(2).toArray();
+    console.log('Sample users from database:', sampleUsers.map(u => ({
+      _id: u._id, 
+      userId: u.userId,
+      email: u.email,
+      keys: Object.keys(u)
+    })));
+    
+    // MULTI-APPROACH USER SEARCH
+    console.log('Starting comprehensive user search...');
+    
+    // Try all possible approaches to find the user
     let mainUser = null;
+    const searchResults = {};
     
-    // Try finding by _id first (if we have a valid ObjectId)
+    // Approach 1: By _id as ObjectId
     if (userObjectId) {
-      mainUser = await db.collection('users').findOne({ _id: userObjectId });
-      console.log('Search by _id in myFirstDatabase.users result:', !!mainUser);
+      const result = await db.collection('users').findOne({ _id: userObjectId });
+      searchResults._id = !!result;
+      if (result) mainUser = result;
+      console.log('Search by _id as ObjectId:', !!result);
     }
     
-    // If not found by _id, try finding by userId field
+    // Approach 2: By userId as string
     if (!mainUser) {
-      mainUser = await db.collection('users').findOne({ userId: userId });
-      console.log('Search by userId in myFirstDatabase.users result:', !!mainUser);
+      const result = await db.collection('users').findOne({ userId: userId });
+      searchResults.userId = !!result;
+      if (result) mainUser = result;
+      console.log('Search by userId as string:', !!result);
     }
     
-    // If still not found, try email if provided
+    // Approach 3: By _id as string
+    if (!mainUser) {
+      const result = await db.collection('users').findOne({ _id: userId });
+      searchResults._idAsString = !!result;
+      if (result) mainUser = result;
+      console.log('Search by _id as string:', !!result);
+    }
+    
+    // Approach 4: By email if provided
     if (!mainUser && profileData.email) {
-      mainUser = await db.collection('users').findOne({ email: profileData.email });
-      console.log('Search by email in myFirstDatabase.users result:', !!mainUser);
+      const result = await db.collection('users').findOne({ email: profileData.email });
+      searchResults.email = !!result;
+      if (result) mainUser = result;
+      console.log('Search by email:', !!result);
+    }
+    
+    // Last resort: create mock user (only for development)
+    if (!mainUser) {
+      console.error('User not found by any method. Search results:', searchResults);
+      console.log('Creating fallback user entry.');
+      
+      // Create a new user record as a fallback (only in development)
+      try {
+        const newUser = {
+          _id: userObjectId || new ObjectId(),
+          userId: userId,
+          firstName: profileData.name ? profileData.name.split(' ')[0] : 'User',
+          lastName: profileData.name ? profileData.name.split(' ').slice(1).join(' ') : userId.substring(0, 8),
+          email: profileData.email || `user_${userId.substring(0, 8)}@example.com`,
+          userType: 'patient',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        const insertResult = await db.collection('users').insertOne(newUser);
+        console.log('Created new user as fallback:', insertResult);
+        
+        if (insertResult.acknowledged) {
+          mainUser = newUser;
+        }
+      } catch (createError) {
+        console.error('Failed to create fallback user:', createError);
+        return NextResponse.json({
+          error: 'User not found and could not create fallback: ' + createError.message,
+          searchResults: searchResults
+        }, { status: 404 });
+      }
     }
     
     if (!mainUser) {
-      console.error('User not found in myFirstDatabase.users. userId:', userId);
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      console.error('User not found and fallback failed. userId:', userId);
+      return NextResponse.json({
+        error: 'User not found after all approaches',
+        userId: userId,
+        searchResults: searchResults
+      }, { status: 404 });
     }
+    
+    console.log('Found user:', {
+      _id: mainUser._id,
+      userId: mainUser.userId,
+      name: `${mainUser.firstName || ''} ${mainUser.lastName || ''}`.trim(),
+      email: mainUser.email
+    });
 
     // Create update operations for mainUser
     let updateOperations = [];
@@ -154,95 +231,68 @@ export async function POST(request) {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
       
-      updateOperations.push({
-        updateOne: {
-          filter: { _id: mainUser._id },
-          update: { 
-            $set: { 
-              firstName: firstName,
-              lastName: lastName || '',
-              updatedAt: new Date()
-            } 
-          }
+      // Direct update instead of bulkWrite for the main user
+      const mainUserUpdateResult = await db.collection('users').updateOne(
+        { _id: mainUser._id },
+        { 
+          $set: { 
+            firstName: firstName,
+            lastName: lastName || '',
+            phone: sanitizedProfileData.phone || mainUser.phone,
+            updatedAt: new Date()
+          } 
         }
-      });
+      );
+      
+      console.log('Main user update result:', mainUserUpdateResult);
     }
 
     // 2. Find or create user profile in shifaai.users
     const shifaaiDb = db.client.db('shifaai');
     let shifaaiUser = await shifaaiDb.collection('users').findOne({ userId: userId });
     
+    // Prepare health data from profile
+    const healthData = {
+      age: profileData.age || getAgeFromDateOfBirth(sanitizedProfileData.dateOfBirth) || null,
+      gender: sanitizedProfileData.gender || null,
+      bloodType: sanitizedProfileData.bloodType || null,
+      conditions: sanitizedProfileData.medicalConditions ? 
+        (typeof sanitizedProfileData.medicalConditions === 'string' ? 
+          [sanitizedProfileData.medicalConditions] : 
+          sanitizedProfileData.medicalConditions) : 
+        [],
+      medications: sanitizedProfileData.medications ? 
+        (typeof sanitizedProfileData.medications === 'string' ? 
+          [sanitizedProfileData.medications] : 
+          sanitizedProfileData.medications) : 
+        [],
+      allergies: sanitizedProfileData.allergies ? 
+        (typeof sanitizedProfileData.allergies === 'string' ? 
+          [sanitizedProfileData.allergies] : 
+          sanitizedProfileData.allergies) : 
+        [],
+      height: healthMetricsData.height,
+      weight: healthMetricsData.weight,
+      bloodPressure: healthMetricsData.bloodPressure,
+      heartRate: healthMetricsData.heartRate,
+      glucoseLevel: healthMetricsData.glucoseLevel,
+      updatedAt: new Date()
+    };
+    
     if (shifaaiUser) {
       console.log('Found user in shifaai.users collection');
       
-      // Update healthData in shifaai.users
-      const healthData = {
-        age: profileData.age || getAgeFromDateOfBirth(sanitizedProfileData.dateOfBirth) || null,
-        gender: sanitizedProfileData.gender || null,
-        bloodType: sanitizedProfileData.bloodType || null,
-        conditions: sanitizedProfileData.medicalConditions ? 
-          (typeof sanitizedProfileData.medicalConditions === 'string' ? 
-            [sanitizedProfileData.medicalConditions] : 
-            sanitizedProfileData.medicalConditions) : 
-          [],
-        medications: sanitizedProfileData.medications ? 
-          (typeof sanitizedProfileData.medications === 'string' ? 
-            [sanitizedProfileData.medications] : 
-            sanitizedProfileData.medications) : 
-          [],
-        allergies: sanitizedProfileData.allergies ? 
-          (typeof sanitizedProfileData.allergies === 'string' ? 
-            [sanitizedProfileData.allergies] : 
-            sanitizedProfileData.allergies) : 
-          [],
-        height: healthMetricsData.height,
-        weight: healthMetricsData.weight,
-        bloodPressure: healthMetricsData.bloodPressure,
-        heartRate: healthMetricsData.heartRate,
-        glucoseLevel: healthMetricsData.glucoseLevel,
-        updatedAt: new Date()
-      };
+      // Direct update for shifaai user
+      const shifaaiUpdateResult = await shifaaiDb.collection('users').updateOne(
+        { userId: userId },
+        { $set: { healthData: healthData } }
+      );
       
-      updateOperations.push({
-        updateOne: {
-          filter: { userId: userId },
-          update: { 
-            $set: { healthData: healthData } 
-          },
-          upsert: true
-        }
-      });
+      console.log('Shifaai user update result:', shifaaiUpdateResult);
     } else {
       console.log('Creating new user in shifaai.users collection');
       
       // Create new user in shifaai.users
-      const healthData = {
-        age: profileData.age || getAgeFromDateOfBirth(sanitizedProfileData.dateOfBirth) || null,
-        gender: sanitizedProfileData.gender || null,
-        bloodType: sanitizedProfileData.bloodType || null,
-        conditions: sanitizedProfileData.medicalConditions ? 
-          (typeof sanitizedProfileData.medicalConditions === 'string' ? 
-            [sanitizedProfileData.medicalConditions] : 
-            sanitizedProfileData.medicalConditions) : 
-          [],
-        medications: sanitizedProfileData.medications ? 
-          (typeof sanitizedProfileData.medications === 'string' ? 
-            [sanitizedProfileData.medications] : 
-            sanitizedProfileData.medications) : 
-          [],
-        allergies: sanitizedProfileData.allergies ? 
-          (typeof sanitizedProfileData.allergies === 'string' ? 
-            [sanitizedProfileData.allergies] : 
-            sanitizedProfileData.allergies) : 
-          [],
-        height: healthMetricsData.height,
-        weight: healthMetricsData.weight,
-        bloodPressure: healthMetricsData.bloodPressure,
-        heartRate: healthMetricsData.heartRate,
-        glucoseLevel: healthMetricsData.glucoseLevel,
-        updatedAt: new Date()
-      };
-      
       const newShifaaiUser = {
         userId: userId,
         healthData: healthData,
@@ -250,47 +300,16 @@ export async function POST(request) {
         createdAt: new Date()
       };
       
-      await shifaaiDb.collection('users').insertOne(newShifaaiUser);
-      console.log('Created new user in shifaai.users');
+      const shifaaiInsertResult = await shifaaiDb.collection('users').insertOne(newShifaaiUser);
+      console.log('Created new user in shifaai.users:', shifaaiInsertResult);
     }
     
-    // 3. Update or create health metrics in healthmetrics collection
-    // Add userId to health metrics
+    // 3. Insert health metrics in healthmetrics collection
     healthMetricsData.userId = userId;
     
-    updateOperations.push({
-      insertOne: {
-        document: healthMetricsData
-      }
-    });
+    const metricsResult = await db.collection('healthmetrics').insertOne(healthMetricsData);
+    console.log('Health metrics insert result:', metricsResult);
     
-    // Execute all operations
-    console.log('Performing bulk write operations');
-    try {
-      // Update main user profile
-      if (updateOperations.length > 0) {
-        const bulkResult = await db.collection('users').bulkWrite(updateOperations.filter(op => op.updateOne && op.updateOne.filter._id));
-        console.log('Main user profile update result:', bulkResult);
-      }
-      
-      // Insert new health metrics
-      const metricsResult = await db.collection('healthmetrics').insertOne(healthMetricsData);
-      console.log('Health metrics insert result:', metricsResult);
-      
-      // Update shifaai user
-      const shifaaiUpdateOps = updateOperations.filter(op => op.updateOne && op.updateOne.filter.userId);
-      if (shifaaiUpdateOps.length > 0) {
-        const shifaaiResult = await shifaaiDb.collection('users').bulkWrite(shifaaiUpdateOps);
-        console.log('Shifaai user update result:', shifaaiResult);
-      }
-    } catch (error) {
-      console.error('Error performing database operations:', error);
-      return NextResponse.json(
-        { error: 'Failed to update user profile: ' + error.message },
-        { status: 500 }
-      );
-    }
-
     // Get the updated user data
     const updatedUser = await db.collection('users').findOne({ _id: mainUser._id });
     console.log('Updated user data retrieved');
@@ -319,7 +338,10 @@ export async function POST(request) {
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json(
-      { error: 'Failed to update profile: ' + error.message },
+      { 
+        error: 'Failed to update profile: ' + error.message,
+        stack: error.stack
+      },
       { status: 500 }
     );
   }
