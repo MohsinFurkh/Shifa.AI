@@ -9,6 +9,71 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAbbalJSTZt-r7RDEG4VG
 // Initialize Google Generative AI client
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
+// AI Doctor system instructions
+const AI_DOCTOR_INSTRUCTIONS = `# AI Doctor Assistant Instructions
+
+## Primary Role
+You are an AI Doctor assistant designed to provide health information and guidance. You operate in two distinct modes: Personal AI Doctor and General AI Doctor, depending on the user's selection.
+
+## Core Guidelines
+- Always clarify you are an AI and not a real doctor
+- Recommend seeking professional medical advice for serious concerns
+- Avoid making definitive diagnoses
+- Be empathetic yet professional in all interactions
+- Prioritize user safety and well-being
+- Never share or recommend harmful, illegal, or dangerous medical advice
+- Respect medical ethics and privacy standards
+
+## Mode-Specific Behavior
+
+### Personal AI Doctor Mode
+- In this mode, you have access to the user's previous conversations and health data
+- Reference and utilize the user's health information when responding:
+  - Age, gender, medical conditions, medications, allergies
+  - Previous symptoms or concerns they've discussed
+- Personalize responses based on their medical history
+- Remember details from earlier in the conversation
+- Use phrases like "based on your medical history" or "considering your condition"
+- Maintain continuity between sessions
+
+### General AI Doctor Mode
+- In this mode, you have no memory of previous interactions with this user
+- Do not reference or assume any personal health information
+- Treat each question as if it's from a new user
+- Provide general information applicable to the average person
+- Use phrases like "generally speaking" or "for most people"
+- Clarify that you're providing general information without knowledge of their specific situation
+
+## Response Format
+- Keep medical explanations clear and accessible
+- Use simple language when explaining complex concepts
+- Include brief explanations of medical terms when used
+- Format information in digestible sections
+- For serious medical concerns, always include a disclaimer about seeking professional care
+
+## Boundaries and Limitations
+- Do not attempt to diagnose specific conditions definitively
+- Do not prescribe specific medications or dosages
+- Do not make promises about treatment outcomes
+- Do not contradict established medical consensus
+- Do not provide emergency medical advice (always direct to emergency services)
+- Do not claim to replace professional medical care
+
+## Topic Handling
+
+### Appropriate Topics
+- General health information and education
+- Explanation of common medical conditions and treatments
+- General wellness and preventative health advice
+- Understanding medical terminology and procedures
+- Information about healthy lifestyle choices
+
+### Topics Requiring Caution
+- Mental health concerns (always encourage professional help)
+- Chronic condition management (emphasize professional guidance)
+- Medication information (provide general info only, not specific recommendations)
+- Pregnancy and childcare (provide general info but emphasize professional care)`;
+
 // Helper function to verify JWT token
 const verifyToken = (request) => {
   try {
@@ -50,9 +115,8 @@ export async function POST(request) {
     const doctorType = user.doctorType;
     const userId = user.userId;
     
-    // Set up system prompt based on doctor type
-    let systemPrompt = "You are an AI doctor providing health information. Remember to maintain medical ethics and remind users you're not a replacement for professional medical care.";
-    let conversationHistory = "";
+    let userHealthInfo = "";
+    let previousMessages = [];
     
     // For personal doctor, fetch user data and chat history
     if (doctorType === 'personal') {
@@ -61,53 +125,57 @@ export async function POST(request) {
         const userData = await db.collection('users').findOne({ userId });
         
         if (userData) {
-          // Include health data in system prompt
-          systemPrompt += " This user has the following health information:";
-          
+          // Format health data
           if (userData.healthData) {
-            if (userData.healthData.age) systemPrompt += ` Age: ${userData.healthData.age}.`;
-            if (userData.healthData.gender) systemPrompt += ` Gender: ${userData.healthData.gender}.`;
-            if (userData.healthData.conditions?.length) systemPrompt += ` Medical conditions: ${userData.healthData.conditions.join(', ')}.`;
-            if (userData.healthData.medications?.length) systemPrompt += ` Medications: ${userData.healthData.medications.join(', ')}.`;
-            if (userData.healthData.allergies?.length) systemPrompt += ` Allergies: ${userData.healthData.allergies.join(', ')}.`;
+            userHealthInfo = "User Health Information:\n";
+            if (userData.healthData.age) userHealthInfo += `- Age: ${userData.healthData.age}\n`;
+            if (userData.healthData.gender) userHealthInfo += `- Gender: ${userData.healthData.gender}\n`;
+            if (userData.healthData.conditions?.length) userHealthInfo += `- Medical conditions: ${userData.healthData.conditions.join(', ')}\n`;
+            if (userData.healthData.medications?.length) userHealthInfo += `- Medications: ${userData.healthData.medications.join(', ')}\n`;
+            if (userData.healthData.allergies?.length) userHealthInfo += `- Allergies: ${userData.healthData.allergies.join(', ')}\n`;
           }
           
           // Get last 10 messages for context
           if (userData.chatHistory && userData.chatHistory.length > 0) {
-            const recentMessages = userData.chatHistory.slice(-10);
-            for (const msg of recentMessages) {
-              conversationHistory += `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}\n`;
-            }
+            previousMessages = userData.chatHistory
+              .slice(-10)
+              .map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+              }));
           }
         }
       } catch (dbError) {
         console.error('Database error:', dbError);
         // Continue even with database error - we'll just have less context
       }
-    } else {
-      // For general doctor, add emphasis on privacy
-      systemPrompt += " This is a general consultation without user-specific data. Maintain privacy and provide general guidance only.";
     }
     
-    // Prepare complete prompt with context
-    const finalPrompt = `${systemPrompt}
-    
-Previous conversation:
-${conversationHistory}
-
-User's current message: ${message}
-
-Please provide a helpful, accurate and ethical medical response:`;
-
-    // Call the Gemini API
     try {
-      // Get the model
+      // Get the Gemini 2.5 Pro model
       const model = genAI.getGenerativeModel({
-        model: "gemini-pro",
+        model: "gemini-pro", // Use gemini-2.5-pro-preview-03-25 in production when available
+        systemInstruction: AI_DOCTOR_INSTRUCTIONS
       });
       
-      // Generate content
-      const result = await model.generateContent(finalPrompt);
+      // Prepare the chat
+      const chat = model.startChat({
+        history: previousMessages,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1000,
+        },
+      });
+      
+      // Add context about the mode and user health data if available
+      let contextPrompt = `[Doctor Type: ${doctorType === 'personal' ? 'Personal AI Doctor' : 'General AI Doctor'}]\n`;
+      if (userHealthInfo) {
+        contextPrompt += userHealthInfo + "\n";
+      }
+      contextPrompt += `User query: ${message}`;
+      
+      // Generate response
+      const result = await chat.sendMessage(contextPrompt);
       const response = await result.response;
       const aiResponse = response.text();
       
