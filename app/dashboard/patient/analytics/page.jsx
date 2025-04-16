@@ -77,31 +77,31 @@ export default function AnalyticsPage() {
           
           // Format health metrics
           const processedHealthMetrics = {
-            weight: {
+    weight: {
               current: currentData.weight || 0,
               previous: previousData.weight || 0,
-              unit: 'kg',
+      unit: 'kg',
               trend: (currentData.weight || 0) < (previousData.weight || 0) ? 'down' : 'up',
               change: Math.abs((currentData.weight || 0) - (previousData.weight || 0)).toFixed(1)
-            },
-            bloodPressure: {
+    },
+    bloodPressure: {
               systolic: parseInt(currentData.bloodPressure?.split('/')[0]) || 120,
               diastolic: parseInt(currentData.bloodPressure?.split('/')[1]) || 80,
-              unit: 'mmHg',
+      unit: 'mmHg',
               status: getBPStatus(currentData.bloodPressure || '120/80')
-            },
-            heartRate: {
+    },
+    heartRate: {
               current: currentData.heartRate || 0,
-              unit: 'bpm',
+      unit: 'bpm',
               status: getHeartRateStatus(currentData.heartRate || 0)
-            },
-            bloodSugar: {
+    },
+    bloodSugar: {
               current: currentData.glucoseLevel || 0,
               unit: 'mg/dL',
               status: getGlucoseStatus(currentData.glucoseLevel || 0)
-            }
-          };
-          
+    }
+  };
+
           setHealthMetrics(processedHealthMetrics);
         } else {
           // Fallback to user data or empty values
@@ -155,7 +155,7 @@ export default function AnalyticsPage() {
             (apt.status === 'upcoming' || apt.status === 'scheduled') && 
             new Date(apt.date || apt.appointmentDate) > now
           ).length;
-          
+
           const past = filteredAppointments.filter(apt => 
             (apt.status === 'completed' || new Date(apt.date || apt.appointmentDate) < now) && 
             apt.status !== 'cancelled'
@@ -225,7 +225,7 @@ export default function AnalyticsPage() {
         console.error('Error fetching analytics data:', err);
         setError('Failed to fetch analytics data. Please try again later.');
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     }
     
@@ -396,48 +396,48 @@ export default function AnalyticsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {appointmentStats.total > 0 ? (
                     <>
-                      <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 className="text-lg font-medium text-gray-800 mb-4">Appointment Overview</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center p-3 bg-primary-50 rounded-lg">
-                            <p className="text-3xl font-bold text-primary-600">{appointmentStats.total}</p>
-                            <p className="text-sm text-gray-500">Total</p>
-                          </div>
-                          <div className="text-center p-3 bg-green-50 rounded-lg">
-                            <p className="text-3xl font-bold text-green-600">{appointmentStats.upcoming}</p>
-                            <p className="text-sm text-gray-500">Upcoming</p>
-                          </div>
-                          <div className="text-center p-3 bg-blue-50 rounded-lg">
-                            <p className="text-3xl font-bold text-blue-600">{appointmentStats.past}</p>
-                            <p className="text-sm text-gray-500">Past</p>
-                          </div>
-                          <div className="text-center p-3 bg-red-50 rounded-lg">
-                            <p className="text-3xl font-bold text-red-600">{appointmentStats.cancelled}</p>
-                            <p className="text-sm text-gray-500">Cancelled</p>
-                          </div>
-                        </div>
+                  <div className="bg-white border rounded-lg p-4 shadow-sm">
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Appointment Overview</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-3 bg-primary-50 rounded-lg">
+                        <p className="text-3xl font-bold text-primary-600">{appointmentStats.total}</p>
+                        <p className="text-sm text-gray-500">Total</p>
                       </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <p className="text-3xl font-bold text-green-600">{appointmentStats.upcoming}</p>
+                        <p className="text-sm text-gray-500">Upcoming</p>
+                      </div>
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <p className="text-3xl font-bold text-blue-600">{appointmentStats.past}</p>
+                        <p className="text-sm text-gray-500">Past</p>
+                      </div>
+                      <div className="text-center p-3 bg-red-50 rounded-lg">
+                        <p className="text-3xl font-bold text-red-600">{appointmentStats.cancelled}</p>
+                        <p className="text-sm text-gray-500">Cancelled</p>
+                      </div>
+                    </div>
+                  </div>
 
                       {appointmentStats.bySpecialty.length > 0 && (
-                        <div className="bg-white border rounded-lg p-4 shadow-sm">
-                          <h3 className="text-lg font-medium text-gray-800 mb-4">Appointments by Specialty</h3>
-                          <div className="space-y-3">
-                            {appointmentStats.bySpecialty.map((item, index) => (
-                              <div key={index} className="flex items-center">
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                  <div 
-                                    className="bg-primary-600 h-2.5 rounded-full" 
-                                    style={{ width: `${(item.count / Math.max(...appointmentStats.bySpecialty.map(s => s.count))) * 100}%` }}
-                                  ></div>
-                                </div>
-                                <div className="ml-4 flex justify-between w-32">
-                                  <span className="text-sm text-gray-600">{item.specialty}</span>
-                                  <span className="text-sm font-medium text-gray-800">{item.count}</span>
-                                </div>
-                              </div>
-                            ))}
+                  <div className="bg-white border rounded-lg p-4 shadow-sm">
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Appointments by Specialty</h3>
+                    <div className="space-y-3">
+                      {appointmentStats.bySpecialty.map((item, index) => (
+                        <div key={index} className="flex items-center">
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div 
+                              className="bg-primary-600 h-2.5 rounded-full" 
+                              style={{ width: `${(item.count / Math.max(...appointmentStats.bySpecialty.map(s => s.count))) * 100}%` }}
+                            ></div>
+                          </div>
+                          <div className="ml-4 flex justify-between w-32">
+                            <span className="text-sm text-gray-600">{item.specialty}</span>
+                            <span className="text-sm font-medium text-gray-800">{item.count}</span>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  </div>
                       )}
                     </>
                   ) : (

@@ -5,9 +5,24 @@ import { ObjectId } from 'mongodb';
 
 export async function POST(request) {
   try {
+    console.log('Update profile API called');
+    
     // Verify authentication
-    const token = request.headers.get('authorization')?.split(' ')[1];
+    const authHeader = request.headers.get('authorization');
+    console.log('Auth header present:', !!authHeader);
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('No valid auth header found');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    const token = authHeader.split(' ')[1];
+    
     if (!token) {
+      console.error('No token found in auth header');
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -15,19 +30,25 @@ export async function POST(request) {
     }
 
     // Verify token validity
+    console.log('Verifying token...');
     const verified = verifyToken(token);
+    
     if (!verified) {
+      console.error('Token verification failed');
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
       );
     }
 
+    console.log('Token verified, user id:', verified.id);
+    
     // Get the authenticated user's ID
     const userId = verified.id;
     
     // Parse the request body
     const profileData = await request.json();
+    console.log('Profile data received:', { ...profileData, userId });
     
     // Validate required fields
     if (!profileData) {
@@ -38,7 +59,9 @@ export async function POST(request) {
     }
 
     // Connect to MongoDB
+    console.log('Connecting to database...');
     const { db } = await connectToDatabase();
+    console.log('Database connection established');
     
     // Clean up the profile data to remove any sensitive or unnecessary fields
     const sanitizedProfileData = {
@@ -64,6 +87,7 @@ export async function POST(request) {
 
     // Update the user's profile in the MongoDB 'users' collection
     const userObjectId = ObjectId.isValid(userId) ? new ObjectId(userId) : userId;
+    console.log('Updating profile for user with ID:', userObjectId);
     
     // Perform the update
     const result = await db.collection('users').updateOne(
@@ -71,7 +95,10 @@ export async function POST(request) {
       { $set: sanitizedProfileData }
     );
 
+    console.log('Update result:', result);
+    
     if (result.matchedCount === 0) {
+      console.error('User not found with ID:', userObjectId);
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -80,6 +107,7 @@ export async function POST(request) {
 
     // Get the updated user data
     const updatedUser = await db.collection('users').findOne({ _id: userObjectId });
+    console.log('Updated user data retrieved');
     
     // Remove sensitive information before returning
     if (updatedUser) {
@@ -88,6 +116,7 @@ export async function POST(request) {
       delete updatedUser.resetTokenExpiry;
     }
 
+    console.log('Update profile API completed successfully');
     return NextResponse.json({
       success: true,
       message: 'Profile updated successfully',
@@ -96,7 +125,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json(
-      { error: 'Failed to update profile' },
+      { error: 'Failed to update profile: ' + error.message },
       { status: 500 }
     );
   }

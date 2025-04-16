@@ -181,9 +181,9 @@ function ForgotPasswordForm() {
               </div>
               
               <div className="text-center">
-                <Link href="/login" className="text-sm font-medium text-primary-600 hover:text-primary-500">
+                <a href="/login" className="text-sm font-medium text-primary-600 hover:text-primary-500">
                   Back to login
-                </Link>
+                </a>
               </div>
             </form>
           )}

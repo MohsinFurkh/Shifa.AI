@@ -110,8 +110,18 @@ export default function PatientProfilePage() {
       const token = user.token;
       
       if (!token) {
+        console.error('Authentication token is missing');
         throw new Error('Authentication token not available');
       }
+      
+      console.log('Submitting profile update with token:', token);
+      console.log('Profile data being sent:', {
+        name: formData.name,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        bloodType: formData.bloodType
+      });
       
       // First, update profile in MongoDB
       const response = await fetch('/api/patient/update-profile', {
@@ -137,16 +147,29 @@ export default function PatientProfilePage() {
         })
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile');
+      console.log('Profile update response status:', response.status);
+      
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response JSON:', e);
+        throw new Error('Invalid response from server');
       }
       
-      const data = await response.json();
+      if (!response.ok) {
+        console.error('Server returned error:', data);
+        throw new Error(data.error || 'Failed to update profile');
+      }
+      
+      console.log('Profile updated successfully on server:', data);
       
       // Now also update the local state via the updateProfile function
       // This ensures local state stays in sync with the server
-      updateProfile({
+      const updateResult = updateProfile({
         name: formData.name,
         phone: formData.phone,
         dateOfBirth: formData.dateOfBirth,
@@ -162,6 +185,8 @@ export default function PatientProfilePage() {
         glucoseLevel: formData.glucoseLevel,
         lastMetricsUpdate: new Date().toISOString()
       });
+      
+      console.log('Local profile update result:', updateResult);
       
       // Extract health metrics for the dedicated health metrics API
       const healthMetrics = {
@@ -189,15 +214,19 @@ export default function PatientProfilePage() {
       
       if (!metricsResponse.ok) {
         console.warn('Health metrics update failed, but profile was updated successfully');
+      } else {
+        console.log('Health metrics updated successfully');
       }
       
       setIsEditing(false);
       
-      // Show success message (you could add a toast notification here)
+      // Show success indicator (temporary alert since we don't have toast)
+      alert('Profile updated successfully!');
       
     } catch (error) {
       console.error('Error updating profile and metrics:', error);
-      // Show error message to user (you could add a toast notification here)
+      // Show error message to user
+      alert('Failed to update profile: ' + error.message);
     } finally {
       setLoading(false);
     }
