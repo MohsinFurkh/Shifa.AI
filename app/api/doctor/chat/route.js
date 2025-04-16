@@ -155,7 +155,7 @@ export async function POST(request) {
     try {
       // Get the Gemini model
       const model = genAI.getGenerativeModel({
-        model: "gemini-pro", // Use gemini-1.5-pro or gemini-2.0-flash in production
+        model: "gemini-1.0-pro", // Using a model that's definitely available in v1beta
         systemInstruction: AI_DOCTOR_INSTRUCTIONS
       });
       
