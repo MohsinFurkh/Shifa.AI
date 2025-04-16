@@ -85,28 +85,70 @@ export async function POST(request) {
       updatedAt: new Date()
     };
 
-    // Update the user's profile in the MongoDB 'users' collection
-    const userObjectId = ObjectId.isValid(userId) ? new ObjectId(userId) : userId;
-    console.log('Updating profile for user with ID:', userObjectId);
+    // Try to convert to ObjectId if valid
+    let userObjectId = null;
+    if (ObjectId.isValid(userId)) {
+      userObjectId = new ObjectId(userId);
+    }
     
-    // Perform the update
+    console.log('Looking for user with ID:', userId);
+    
+    // First, try to find the user to confirm they exist
+    let user = null;
+    
+    // Try finding by _id first (if we have a valid ObjectId)
+    if (userObjectId) {
+      user = await db.collection('users').findOne({ _id: userObjectId });
+      console.log('Search by _id result:', !!user);
+    }
+    
+    // If not found by _id, try finding by userId field
+    if (!user) {
+      user = await db.collection('users').findOne({ userId: userId });
+      console.log('Search by userId result:', !!user);
+    }
+    
+    // If still not found, try email if provided
+    if (!user && profileData.email) {
+      user = await db.collection('users').findOne({ email: profileData.email });
+      console.log('Search by email result:', !!user);
+    }
+    
+    if (!user) {
+      console.error('User not found with any ID method. userId:', userId);
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Now we have found the user, use the correct ID field for the update
+    const userIdField = userObjectId && user._id ? '_id' : 'userId';
+    const userIdValue = userObjectId && user._id ? userObjectId : userId;
+    
+    console.log(`Updating profile for user with ${userIdField}:`, userIdValue);
+    
+    // Perform the update with the correct field
+    const query = {};
+    query[userIdField] = userIdValue;
+    
     const result = await db.collection('users').updateOne(
-      { _id: userObjectId },
+      query,
       { $set: sanitizedProfileData }
     );
 
     console.log('Update result:', result);
     
     if (result.matchedCount === 0) {
-      console.error('User not found with ID:', userObjectId);
+      console.error(`User not found with ${userIdField}:`, userIdValue);
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'Failed to update user profile' },
         { status: 404 }
       );
     }
 
     // Get the updated user data
-    const updatedUser = await db.collection('users').findOne({ _id: userObjectId });
+    const updatedUser = await db.collection('users').findOne(query);
     console.log('Updated user data retrieved');
     
     // Remove sensitive information before returning
