@@ -10,7 +10,6 @@ const navigation = {
     { name: 'Contact', href: '/contact' },
   ],
   patient: [
-    { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker' },
     { name: 'Test Recommendations', href: '/dashboard/patient/test-recommendations' },
     { name: 'Report Analysis', href: '/dashboard/patient/reports' },
     { name: 'Medicine Recommendations', href: '/dashboard/patient/medications' },

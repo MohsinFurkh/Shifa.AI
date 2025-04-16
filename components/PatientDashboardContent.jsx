@@ -23,7 +23,6 @@ import {
 // Quick action links
 const quickActions = [
   { name: 'Health Profile', href: '/dashboard/patient/profile', icon: UserIcon, color: 'bg-pink-500' },
-  { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker', icon: ClipboardDocumentListIcon, color: 'bg-blue-500' },
   { name: 'Book Appointment', href: '/dashboard/patient/appointments', icon: CalendarIcon, color: 'bg-purple-500' },
   { name: 'AI Doctor', href: '/dashboard/patient/ai-doctor', icon: ChatBubbleLeftRightIcon, color: 'bg-green-500' },
   { name: 'Find a Doctor', href: '/dashboard/patient/find-doctor', icon: UserPlusIcon, color: 'bg-orange-500' },

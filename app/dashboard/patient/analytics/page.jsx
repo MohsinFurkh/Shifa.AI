@@ -11,7 +11,8 @@ import {
   HeartIcon, 
   ScaleIcon, 
   ArrowTrendingUpIcon, 
-  ArrowTrendingDownIcon 
+  ArrowTrendingDownIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 
 export default function AnalyticsPage() {
@@ -21,86 +22,240 @@ export default function AnalyticsPage() {
   const [appointmentStats, setAppointmentStats] = useState(null);
   const [medicationAdherence, setMedicationAdherence] = useState(null);
   const [timeRange, setTimeRange] = useState('month'); // month, quarter, year
-
-  // Sample data for demo purposes
-  const sampleHealthMetrics = {
-    weight: {
-      current: 75.5,
-      previous: 76.2,
-      unit: 'kg',
-      trend: 'down',
-      change: 0.7
-    },
-    bloodPressure: {
-      systolic: 120,
-      diastolic: 80,
-      unit: 'mmHg',
-      status: 'normal'
-    },
-    heartRate: {
-      current: 72,
-      unit: 'bpm',
-      status: 'normal'
-    },
-    bloodSugar: {
-      current: 5.2,
-      unit: 'mmol/L',
-      status: 'normal'
-    }
-  };
-
-  const sampleAppointmentStats = {
-    total: 12,
-    upcoming: 2,
-    past: 9,
-    cancelled: 1,
-    bySpecialty: [
-      { specialty: 'General Physician', count: 5 },
-      { specialty: 'Cardiologist', count: 3 },
-      { specialty: 'Dermatologist', count: 2 },
-      { specialty: 'Pediatrician', count: 1 },
-      { specialty: 'Neurologist', count: 1 }
-    ],
-    byMonth: [
-      { month: 'Jan', count: 1 },
-      { month: 'Feb', count: 0 },
-      { month: 'Mar', count: 2 },
-      { month: 'Apr', count: 1 },
-      { month: 'May', count: 3 },
-      { month: 'Jun', count: 2 },
-      { month: 'Jul', count: 3 }
-    ]
-  };
-
-  const sampleMedicationAdherence = {
-    overall: 92,
-    byMedication: [
-      { name: 'Metformin', adherence: 95 },
-      { name: 'Lisinopril', adherence: 90 },
-      { name: 'Atorvastatin', adherence: 88 },
-      { name: 'Aspirin', adherence: 96 }
-    ],
-    byMonth: [
-      { month: 'Jan', adherence: 88 },
-      { month: 'Feb', adherence: 90 },
-      { month: 'Mar', adherence: 85 },
-      { month: 'Apr', adherence: 92 },
-      { month: 'May', adherence: 94 },
-      { month: 'Jun', adherence: 95 },
-      { month: 'Jul', adherence: 92 }
-    ]
-  };
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulate API fetch
-    setLoading(true);
-    setTimeout(() => {
-      setHealthMetrics(sampleHealthMetrics);
-      setAppointmentStats(sampleAppointmentStats);
-      setMedicationAdherence(sampleMedicationAdherence);
-      setLoading(false);
-    }, 1000);
-  }, [timeRange]);
+    async function fetchUserData() {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Try to get the most up-to-date data
+        let userData = user;
+        const storedUserData = localStorage.getItem('shifaai_user');
+        
+        if (storedUserData) {
+          try {
+            const parsedData = JSON.parse(storedUserData);
+            // Use localStorage data if it's for the current user
+            if (parsedData.email === user.email && parsedData.id === user.id) {
+              userData = parsedData;
+            }
+          } catch (e) {
+            console.error("Error parsing stored user data", e);
+          }
+        }
+        
+        // Get user ID
+        const userId = userData._id || userData.id;
+        
+        // Fetch health metrics
+        const healthResponse = await fetch(`/api/patient/get-health-metrics?userId=${userId}`);
+        let healthData = null;
+        
+        if (healthResponse.ok) {
+          const responseData = await healthResponse.json();
+          healthData = responseData.data;
+        }
+        
+        // Fetch appointments
+        const appointmentsResponse = await fetch(`/api/patient/appointments?userId=${userId}`);
+        let appointmentsData = [];
+        
+        if (appointmentsResponse.ok) {
+          const responseData = await appointmentsResponse.json();
+          appointmentsData = responseData.data || [];
+        }
+        
+        // Fetch medications (can be added in the future)
+        // For now, we'll use a simple calculation based on existing data
+        
+        // Process health data
+        if (healthData && healthData.current) {
+          const currentData = healthData.current;
+          const previousData = healthData.previous || {};
+          
+          // Format health metrics
+          const processedHealthMetrics = {
+            weight: {
+              current: currentData.weight || 0,
+              previous: previousData.weight || 0,
+              unit: 'kg',
+              trend: (currentData.weight || 0) < (previousData.weight || 0) ? 'down' : 'up',
+              change: Math.abs((currentData.weight || 0) - (previousData.weight || 0)).toFixed(1)
+            },
+            bloodPressure: {
+              systolic: parseInt(currentData.bloodPressure?.split('/')[0]) || 120,
+              diastolic: parseInt(currentData.bloodPressure?.split('/')[1]) || 80,
+              unit: 'mmHg',
+              status: getBPStatus(currentData.bloodPressure || '120/80')
+            },
+            heartRate: {
+              current: currentData.heartRate || 0,
+              unit: 'bpm',
+              status: getHeartRateStatus(currentData.heartRate || 0)
+            },
+            bloodSugar: {
+              current: currentData.glucoseLevel || 0,
+              unit: 'mg/dL',
+              status: getGlucoseStatus(currentData.glucoseLevel || 0)
+            }
+          };
+          
+          setHealthMetrics(processedHealthMetrics);
+        } else {
+          // Fallback to user data or empty values
+          const fallbackHealthMetrics = {
+            weight: {
+              current: userData.weight || 0,
+              previous: userData.previousWeight || 0,
+              unit: 'kg',
+              trend: (userData.weight || 0) < (userData.previousWeight || 0) ? 'down' : 'up',
+              change: Math.abs((userData.weight || 0) - (userData.previousWeight || 0)).toFixed(1)
+            },
+            bloodPressure: {
+              systolic: parseInt(userData.bloodPressure?.split('/')[0]) || 120,
+              diastolic: parseInt(userData.bloodPressure?.split('/')[1]) || 80,
+              unit: 'mmHg',
+              status: getBPStatus(userData.bloodPressure || '120/80')
+            },
+            heartRate: {
+              current: userData.heartRate || 0,
+              unit: 'bpm',
+              status: getHeartRateStatus(userData.heartRate || 0)
+            },
+            bloodSugar: {
+              current: userData.glucoseLevel || 0,
+              unit: 'mg/dL',
+              status: getGlucoseStatus(userData.glucoseLevel || 0)
+            }
+          };
+          
+          setHealthMetrics(fallbackHealthMetrics);
+        }
+        
+        // Process appointment data
+        if (appointmentsData && appointmentsData.length > 0) {
+          const now = new Date();
+          
+          // Filter appointments based on time range
+          const filteredAppointments = appointmentsData.filter(apt => {
+            const aptDate = new Date(apt.date || apt.appointmentDate);
+            if (timeRange === 'month') {
+              return aptDate >= new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+            } else if (timeRange === 'quarter') {
+              return aptDate >= new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+            } else { // year
+              return aptDate >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+            }
+          });
+          
+          // Count appointments by status
+          const upcoming = filteredAppointments.filter(apt => 
+            (apt.status === 'upcoming' || apt.status === 'scheduled') && 
+            new Date(apt.date || apt.appointmentDate) > now
+          ).length;
+          
+          const past = filteredAppointments.filter(apt => 
+            (apt.status === 'completed' || new Date(apt.date || apt.appointmentDate) < now) && 
+            apt.status !== 'cancelled'
+          ).length;
+          
+          const cancelled = filteredAppointments.filter(apt => 
+            apt.status === 'cancelled'
+          ).length;
+          
+          // Count appointments by specialty
+          const specialtyCounts = {};
+          filteredAppointments.forEach(apt => {
+            const specialty = apt.specialty || apt.doctorSpecialty || 'General';
+            specialtyCounts[specialty] = (specialtyCounts[specialty] || 0) + 1;
+          });
+          
+          const bySpecialty = Object.entries(specialtyCounts).map(([specialty, count]) => ({
+            specialty,
+            count
+          })).sort((a, b) => b.count - a.count);
+          
+          // Count appointments by month
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const monthCounts = {};
+          
+          filteredAppointments.forEach(apt => {
+            const aptDate = new Date(apt.date || apt.appointmentDate);
+            const monthKey = months[aptDate.getMonth()];
+            monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
+          });
+          
+          const byMonth = months.map(month => ({
+            month,
+            count: monthCounts[month] || 0
+          }));
+          
+          const processedAppointmentStats = {
+            total: filteredAppointments.length,
+            upcoming,
+            past,
+            cancelled,
+            bySpecialty,
+            byMonth
+          };
+          
+          setAppointmentStats(processedAppointmentStats);
+        } else {
+          // Default empty appointment stats
+          setAppointmentStats({
+            total: 0,
+            upcoming: 0,
+            past: 0,
+            cancelled: 0,
+            bySpecialty: [],
+            byMonth: []
+          });
+        }
+        
+        // Calculate medication adherence (simplified version)
+        // In a real app, this would come from tracking actual medication intake
+        setMedicationAdherence({
+          overall: 90, // Default value
+          byMedication: [],
+          byMonth: []
+        });
+      } catch (err) {
+        console.error('Error fetching analytics data:', err);
+        setError('Failed to fetch analytics data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    if (user) {
+      fetchUserData();
+    }
+  }, [user, timeRange]);
+  
+  // Helper functions for determining health status
+  function getBPStatus(bp) {
+    if (!bp) return 'normal';
+    const [systolic, diastolic] = bp.split('/').map(Number);
+    if (systolic < 120 && diastolic < 80) return 'normal';
+    if ((systolic >= 120 && systolic <= 129) && diastolic < 80) return 'elevated';
+    return 'high';
+  }
+  
+  function getHeartRateStatus(rate) {
+    const hr = Number(rate);
+    if (hr >= 60 && hr <= 100) return 'normal';
+    if (hr < 60) return 'low';
+    return 'high';
+  }
+  
+  function getGlucoseStatus(level) {
+    const gl = Number(level);
+    if (gl < 100) return 'normal';
+    if (gl >= 100 && gl <= 125) return 'elevated';
+    return 'high';
+  }
 
   if (!user) {
     return null;
@@ -151,7 +306,18 @@ export default function AnalyticsPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
               <p className="mt-4 text-gray-500">Loading analytics data...</p>
             </div>
-          ) : (
+          ) : error ? (
+            <div className="p-8 text-center">
+              <ExclamationCircleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-500">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-4 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+              >
+                Retry
+              </button>
+            </div>
+          ) : healthMetrics ? (
             <div className="p-6">
               {/* Health Metrics */}
               <div className="mb-8">
@@ -228,118 +394,79 @@ export default function AnalyticsPage() {
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Appointment Statistics</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <h3 className="text-lg font-medium text-gray-800 mb-4">Appointment Overview</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center p-3 bg-primary-50 rounded-lg">
-                        <p className="text-3xl font-bold text-primary-600">{appointmentStats.total}</p>
-                        <p className="text-sm text-gray-500">Total</p>
-                      </div>
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <p className="text-3xl font-bold text-green-600">{appointmentStats.upcoming}</p>
-                        <p className="text-sm text-gray-500">Upcoming</p>
-                      </div>
-                      <div className="text-center p-3 bg-blue-50 rounded-lg">
-                        <p className="text-3xl font-bold text-blue-600">{appointmentStats.past}</p>
-                        <p className="text-sm text-gray-500">Past</p>
-                      </div>
-                      <div className="text-center p-3 bg-red-50 rounded-lg">
-                        <p className="text-3xl font-bold text-red-600">{appointmentStats.cancelled}</p>
-                        <p className="text-sm text-gray-500">Cancelled</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <h3 className="text-lg font-medium text-gray-800 mb-4">Appointments by Specialty</h3>
-                    <div className="space-y-3">
-                      {appointmentStats.bySpecialty.map((item, index) => (
-                        <div key={index} className="flex items-center">
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                              className="bg-primary-600 h-2.5 rounded-full" 
-                              style={{ width: `${(item.count / Math.max(...appointmentStats.bySpecialty.map(s => s.count))) * 100}%` }}
-                            ></div>
+                  {appointmentStats.total > 0 ? (
+                    <>
+                      <div className="bg-white border rounded-lg p-4 shadow-sm">
+                        <h3 className="text-lg font-medium text-gray-800 mb-4">Appointment Overview</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-center p-3 bg-primary-50 rounded-lg">
+                            <p className="text-3xl font-bold text-primary-600">{appointmentStats.total}</p>
+                            <p className="text-sm text-gray-500">Total</p>
                           </div>
-                          <div className="ml-4 flex justify-between w-32">
-                            <span className="text-sm text-gray-600">{item.specialty}</span>
-                            <span className="text-sm font-medium text-gray-800">{item.count}</span>
+                          <div className="text-center p-3 bg-green-50 rounded-lg">
+                            <p className="text-3xl font-bold text-green-600">{appointmentStats.upcoming}</p>
+                            <p className="text-sm text-gray-500">Upcoming</p>
+                          </div>
+                          <div className="text-center p-3 bg-blue-50 rounded-lg">
+                            <p className="text-3xl font-bold text-blue-600">{appointmentStats.past}</p>
+                            <p className="text-sm text-gray-500">Past</p>
+                          </div>
+                          <div className="text-center p-3 bg-red-50 rounded-lg">
+                            <p className="text-3xl font-bold text-red-600">{appointmentStats.cancelled}</p>
+                            <p className="text-sm text-gray-500">Cancelled</p>
                           </div>
                         </div>
-                      ))}
+                      </div>
+
+                      {appointmentStats.bySpecialty.length > 0 && (
+                        <div className="bg-white border rounded-lg p-4 shadow-sm">
+                          <h3 className="text-lg font-medium text-gray-800 mb-4">Appointments by Specialty</h3>
+                          <div className="space-y-3">
+                            {appointmentStats.bySpecialty.map((item, index) => (
+                              <div key={index} className="flex items-center">
+                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                  <div 
+                                    className="bg-primary-600 h-2.5 rounded-full" 
+                                    style={{ width: `${(item.count / Math.max(...appointmentStats.bySpecialty.map(s => s.count))) * 100}%` }}
+                                  ></div>
+                                </div>
+                                <div className="ml-4 flex justify-between w-32">
+                                  <span className="text-sm text-gray-600">{item.specialty}</span>
+                                  <span className="text-sm font-medium text-gray-800">{item.count}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="bg-white border rounded-lg p-6 shadow-sm col-span-2 text-center">
+                      <CalendarDaysIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <h3 className="text-lg font-medium text-gray-800">No Appointment Data Available</h3>
+                      <p className="text-gray-500 mt-2">You don't have any appointments recorded for the selected time period.</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
               {/* Medication Adherence */}
               <div>
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Medication Adherence</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-800">Overall Adherence</h3>
-                      <div className="flex items-center">
-                        <div className="w-16 h-16 relative">
-                          <svg className="w-full h-full" viewBox="0 0 36 36">
-                            <path
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="#E5E7EB"
-                              strokeWidth="3"
-                            />
-                            <path
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="#10B981"
-                              strokeWidth="3"
-                              strokeDasharray={`${medicationAdherence.overall}, 100`}
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-lg font-bold text-gray-800">{medicationAdherence.overall}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      {medicationAdherence.byMedication.map((medication, index) => (
-                        <div key={index} className="flex items-center">
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                              className="bg-green-600 h-2.5 rounded-full" 
-                              style={{ width: `${medication.adherence}%` }}
-                            ></div>
-                          </div>
-                          <div className="ml-4 flex justify-between w-32">
-                            <span className="text-sm text-gray-600">{medication.name}</span>
-                            <span className="text-sm font-medium text-gray-800">{medication.adherence}%</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <h3 className="text-lg font-medium text-gray-800 mb-4">Adherence Trend</h3>
-                    <div className="h-64 flex items-end space-x-2">
-                      {medicationAdherence.byMonth.map((month, index) => (
-                        <div key={index} className="flex-1 flex flex-col items-center">
-                          <div 
-                            className="w-full bg-green-500 rounded-t"
-                            style={{ height: `${month.adherence}%` }}
-                          ></div>
-                          <span className="text-xs text-gray-500 mt-1">{month.month}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                <div className="bg-white border rounded-lg p-6 shadow-sm text-center">
+                  <ClockIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-800">Medication Tracking Coming Soon</h3>
+                  <p className="text-gray-500 mt-2">We're working on a feature to help you track your medication adherence over time.</p>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <ExclamationCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No health data available</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Please update your health profile to see analytics and insights.
+              </p>
             </div>
           )}
         </div>

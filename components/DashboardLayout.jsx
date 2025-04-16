@@ -26,7 +26,6 @@ const userTypeNavigation = {
     { name: 'Health Profile', href: '/dashboard/patient/profile', icon: UserIcon },
     { name: 'Find a Doctor', href: '/dashboard/patient/find-doctor', icon: UserGroupIcon },
     { name: 'AI Doctor', href: '/dashboard/patient/ai-doctor', icon: ChatBubbleLeftRightIcon },
-    { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker', icon: ClipboardDocumentListIcon },
     { name: 'Medical Records', href: '/dashboard/patient/records', icon: DocumentTextIcon },
     { name: 'Consultations', href: '/dashboard/patient/consultations', icon: ChatBubbleLeftRightIcon },
     { name: 'Analytics', href: '/dashboard/patient/analytics', icon: ChartBarIcon },
