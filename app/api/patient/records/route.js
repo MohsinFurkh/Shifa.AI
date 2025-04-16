@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../../lib/mongodb';
-import { verifyJwtToken } from '../../../../lib/auth';
+import { verifyToken } from '../../../../lib/jwt';
 
 export async function GET(request) {
   try {
@@ -12,8 +12,8 @@ export async function GET(request) {
     const token = request.headers.get('authorization')?.split(' ')[1];
     if (token) {
       try {
-        const verified = await verifyJwtToken(token);
-        if (!verified || (verified.userId !== userId && !verified.isAdmin)) {
+        const verified = verifyToken(token);
+        if (!verified || (verified.id !== userId && !verified.isAdmin)) {
           return NextResponse.json(
             { error: 'Unauthorized access' },
             { status: 401 }
