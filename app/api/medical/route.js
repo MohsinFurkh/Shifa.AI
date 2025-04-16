@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize the Google Generative AI with your API key
-const genAI = new GoogleGenerativeAI('AIzaSyAbbalJSTZt-r7RDEG4VGkiwdEduZD04X4');
+// Initialize the Google Generative AI with your API key directly
+const GEMINI_API_KEY = 'AIzaSyAbbalJSTZt-r7RDEG4VGkiwdEduZD04X4';
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // Medical assistant system instructions
 const MEDICAL_ASSISTANT_INSTRUCTIONS = `# Medical Assistant Instructions
@@ -51,7 +52,7 @@ export async function POST(request) {
 
     // Get the model with system instructions
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-pro", // Use gemini-2.5-pro-preview-03-25 in production when available
+      model: "gemini-pro", // Use gemini-1.5-pro or gemini-2.0-flash in production
       systemInstruction: MEDICAL_ASSISTANT_INSTRUCTIONS
     });
 
@@ -72,6 +73,8 @@ Please provide a comprehensive medical assessment following the structured forma
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+
+    console.log("Successfully generated medical assessment using Gemini API");
 
     return Response.json({
       success: true,

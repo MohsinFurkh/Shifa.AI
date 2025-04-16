@@ -4,7 +4,8 @@ import { connectToDatabase } from '../../../../lib/mongodb';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-for-development-only';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAbbalJSTZt-r7RDEG4VGkiwdEduZD04X4';
+// Add API key directly in the code
+const GEMINI_API_KEY = 'AIzaSyAbbalJSTZt-r7RDEG4VGkiwdEduZD04X4';
 
 // Initialize Google Generative AI client
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -152,9 +153,9 @@ export async function POST(request) {
     }
     
     try {
-      // Get the Gemini 2.5 Pro model
+      // Get the Gemini model
       const model = genAI.getGenerativeModel({
-        model: "gemini-pro", // Use gemini-2.5-pro-preview-03-25 in production when available
+        model: "gemini-pro", // Use gemini-1.5-pro or gemini-2.0-flash in production
         systemInstruction: AI_DOCTOR_INSTRUCTIONS
       });
       
@@ -174,10 +175,14 @@ export async function POST(request) {
       }
       contextPrompt += `User query: ${message}`;
       
+      console.log(`Processing ${doctorType} doctor request`);
+      
       // Generate response
       const result = await chat.sendMessage(contextPrompt);
       const response = await result.response;
       const aiResponse = response.text();
+      
+      console.log("Successfully generated AI doctor response using Gemini API");
       
       // Save conversation to database for Personal AI Doctor
       if (doctorType === 'personal') {
