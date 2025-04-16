@@ -64,6 +64,13 @@ const UserSchema = new mongoose.Schema({
   education: {
     type: String
   },
+  // Password reset fields
+  resetToken: {
+    type: String
+  },
+  resetTokenExpiry: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
