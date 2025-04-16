@@ -6,7 +6,7 @@ A medical assistance platform powered by AI.
 
 - Medical Assistant: Get AI-powered medical assessments based on symptoms
 - MongoDB Integration: Secure storage for medical data
-- OpenAI Integration: Advanced language model for medical advice
+- Google Gemini Integration: Advanced language model for accurate medical advice
 
 ## Getting Started
 
@@ -14,7 +14,7 @@ A medical assistance platform powered by AI.
 2. Install dependencies with `npm install`
 3. Set up environment variables:
    - MONGODB_URI
-   - OPENAI_API_KEY
+   - GEMINI_API_KEY
    - JWT_SECRET
 4. Run the development server with `npm run dev`
 
