@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const navigation = {
   main: [
@@ -9,23 +10,23 @@ const navigation = {
     { name: 'Contact', href: '/contact' },
   ],
   patient: [
-    { name: 'Symptom Checker', href: '#' },
-    { name: 'Test Recommendations', href: '#' },
-    { name: 'Report Analysis', href: '#' },
-    { name: 'Medicine Recommendations', href: '#' },
-    { name: 'Health Dashboard', href: '#' },
+    { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker' },
+    { name: 'Test Recommendations', href: '/dashboard/patient/test-recommendations' },
+    { name: 'Report Analysis', href: '/dashboard/patient/reports' },
+    { name: 'Medicine Recommendations', href: '/dashboard/patient/medications' },
+    { name: 'Health Dashboard', href: '/dashboard/patient' },
   ],
   doctor: [
-    { name: 'Image Analysis', href: '#' },
-    { name: 'Report Summarization', href: '#' },
-    { name: 'Patient Management', href: '#' },
-    { name: 'Decision Support', href: '#' },
-    { name: 'Research & Analytics', href: '#' },
+    { name: 'Image Analysis', href: '/dashboard/doctor/image-analysis' },
+    { name: 'Report Summarization', href: '/dashboard/doctor/reports' },
+    { name: 'Patient Management', href: '/dashboard/doctor/patients' },
+    { name: 'Decision Support', href: '/dashboard/doctor/ai-analysis' },
+    { name: 'Research & Analytics', href: '/dashboard/doctor/analytics' },
   ],
   legal: [
-    { name: 'Privacy Policy', href: '#' },
-    { name: 'Terms of Service', href: '#' },
-    { name: 'Cookie Policy', href: '#' },
+    { name: 'Privacy Policy', href: '/privacy-policy' },
+    { name: 'Terms of Service', href: '/terms-of-service' },
+    { name: 'Cookie Policy', href: '/cookie-policy' },
   ],
   social: [
     {
@@ -67,7 +68,53 @@ const navigation = {
   ],
 };
 
-export default function Footer() {
+export default function Footer({ currentUser, isDashboardRoute }) {
+  const router = useRouter();
+  
+  // Handle link click with access control
+  const handleNavLinkClick = (e, href) => {
+    // For patient dashboard links, redirect to login if not logged in
+    // or to dashboard if logged in as doctor
+    if (href.startsWith('/dashboard/patient')) {
+      if (!currentUser) {
+        e.preventDefault();
+        router.push('/login');
+        return;
+      } else if (currentUser.type === 'doctor' || currentUser.type === 'admin') {
+        e.preventDefault();
+        router.push(`/dashboard/${currentUser.type}`);
+        return;
+      }
+    }
+    
+    // For doctor dashboard links, redirect to login if not logged in
+    // or to dashboard if logged in as patient
+    if (href.startsWith('/dashboard/doctor')) {
+      if (!currentUser) {
+        e.preventDefault();
+        router.push('/login');
+        return;
+      } else if (currentUser.type === 'patient' || currentUser.type === 'admin') {
+        e.preventDefault();
+        router.push(`/dashboard/${currentUser.type}`);
+        return;
+      }
+    }
+  };
+  
+  // Custom link component that handles access control
+  const NavLink = ({ href, children, className }) => {
+    return (
+      <Link 
+        href={href}
+        onClick={(e) => handleNavLinkClick(e, href)}
+        className={className}
+      >
+        {children}
+      </Link>
+    );
+  };
+
   return (
     <footer className="bg-white border-t border-gray-200" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">
@@ -98,9 +145,9 @@ export default function Footer() {
                 <ul role="list" className="mt-6 space-y-4">
                   {navigation.patient.map((item) => (
                     <li key={item.name}>
-                      <a href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
+                      <NavLink href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
                         {item.name}
-                      </a>
+                      </NavLink>
                     </li>
                   ))}
                 </ul>
@@ -110,9 +157,9 @@ export default function Footer() {
                 <ul role="list" className="mt-6 space-y-4">
                   {navigation.doctor.map((item) => (
                     <li key={item.name}>
-                      <a href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
+                      <NavLink href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
                         {item.name}
-                      </a>
+                      </NavLink>
                     </li>
                   ))}
                 </ul>
@@ -124,9 +171,9 @@ export default function Footer() {
                 <ul role="list" className="mt-6 space-y-4">
                   {navigation.main.map((item) => (
                     <li key={item.name}>
-                      <a href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
+                      <Link href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
                         {item.name}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -136,9 +183,9 @@ export default function Footer() {
                 <ul role="list" className="mt-6 space-y-4">
                   {navigation.legal.map((item) => (
                     <li key={item.name}>
-                      <a href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
+                      <Link href={item.href} className="text-sm leading-6 text-gray-600 hover:text-gray-900">
                         {item.name}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
