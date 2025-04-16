@@ -29,8 +29,12 @@ export const AuthProvider = ({ children }) => {
     // Only run after initial load
     if (loading) return;
     
+    // Public routes that don't require authentication
+    const publicRoutes = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
+    const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '?'));
+    
     // If no user and on a protected route, redirect to login
-    if (!user && pathname !== '/' && pathname !== '/login' && pathname !== '/register') {
+    if (!user && !isPublicRoute) {
       router.push('/login');
       return;
     }
@@ -198,12 +202,12 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
-      login, 
-      logout, 
-      updateProfile, 
       loading,
+      login,
+      logout,
+      updateProfile,
       getToken,
-      authFetch 
+      authFetch
     }}>
       {children}
     </AuthContext.Provider>
