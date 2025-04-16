@@ -89,7 +89,7 @@ async function generateContentDirect(prompt, contextMessages = []) {
     if (contextMessages.length > 0) {
       requestBody.contents = [
         ...contextMessages.map(msg => ({
-          role: msg.role,
+          role: msg.role === 'user' ? 'user' : 'model',
           parts: [{ text: msg.content }]
         })),
         {
@@ -100,7 +100,7 @@ async function generateContentDirect(prompt, contextMessages = []) {
     }
     
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -224,52 +224,9 @@ Remember to:
       
       console.log(`Processing ${doctorType} doctor request`);
       
-      // Try using direct API approach first
-      let aiResponse;
-      try {
-        aiResponse = await generateContentDirect(contextPrompt, previousMessages);
-        console.log("Successfully generated AI doctor response using direct Gemini API call");
-      } catch (directApiError) {
-        console.error("Direct API approach failed:", directApiError);
-        
-        // List available models
-        try {
-          const listModelsResponse = await genAI.listModels();
-          console.log("Available models:", listModelsResponse.models.map(m => m.name));
-          
-          // Fall back to the library approach with a suitable model
-          const availableModels = listModelsResponse.models.map(m => m.name);
-          let modelToUse = "gemini-pro";
-          
-          if (availableModels.includes("models/gemini-pro")) {
-            modelToUse = "gemini-pro";
-          } else if (availableModels.includes("models/gemini-1.0-pro")) {
-            modelToUse = "gemini-1.0-pro";
-          } else if (availableModels.length > 0) {
-            // Use the first available model
-            const firstModel = availableModels[0];
-            modelToUse = firstModel.replace("models/", "");
-          }
-          
-          console.log("Using model:", modelToUse);
-          
-          // Prepare the model
-          const model = genAI.getGenerativeModel({
-            model: modelToUse,
-            systemInstruction: AI_DOCTOR_INSTRUCTIONS
-          });
-          
-          // Generate content
-          const result = await model.generateContent(contextPrompt);
-          const response = await result.response;
-          aiResponse = response.text();
-          
-          console.log("Successfully generated AI doctor response using Gemini API library");
-        } catch (libraryError) {
-          console.error("Library approach also failed:", libraryError);
-          throw new Error("All API approaches failed");
-        }
-      }
+      // Generate response using direct API call to gemini-2.0-flash
+      const aiResponse = await generateContentDirect(contextPrompt, previousMessages);
+      console.log("Successfully generated AI doctor response using Gemini 2.0 Flash");
       
       // Save conversation to database for Personal AI Doctor
       if (doctorType === 'personal') {

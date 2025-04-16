@@ -46,11 +46,12 @@ For symptom assessments, structure your response in these sections:
 - Be comprehensive but concise in explanations
 - Always conclude with a reminder that this is for informational purposes only`;
 
-// Function to make a direct API call to generate content
+// Function to make a direct API call to generate content using fetch
 async function generateContentDirect(prompt) {
   try {
+    // Docs suggest this endpoint for v1beta
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -105,64 +106,25 @@ Remember to:
 - Emphasize consulting healthcare professionals
 - Include a disclaimer that this is for informational purposes only`;
 
-    // Try using the direct API approach
     try {
+      // Use the direct API approach with gemini-2.0-flash
       const text = await generateContentDirect(prompt);
-      console.log("Successfully generated medical assessment using direct Gemini API call");
+      console.log("Successfully generated medical assessment using Gemini 2.0 Flash");
       
       return Response.json({
         success: true,
         response: text
       });
-    } catch (directApiError) {
-      console.error("Direct API approach failed:", directApiError);
-      
-      // If direct approach fails, try the library approach with model listing
-      try {
-        // List available models
-        const listModelsResponse = await genAI.listModels();
-        console.log("Available models:", listModelsResponse.models.map(m => m.name));
-        
-        // Find a suitable model
-        const availableModels = listModelsResponse.models.map(m => m.name);
-        let modelToUse = "gemini-pro";
-        
-        if (availableModels.includes("models/gemini-pro")) {
-          modelToUse = "gemini-pro";
-        } else if (availableModels.includes("models/gemini-1.0-pro")) {
-          modelToUse = "gemini-1.0-pro";
-        } else if (availableModels.length > 0) {
-          // Use the first available model
-          const firstModel = availableModels[0];
-          modelToUse = firstModel.replace("models/", "");
-        }
-        
-        console.log("Using model:", modelToUse);
-        
-        // Get the model with system instructions
-        const model = genAI.getGenerativeModel({ 
-          model: modelToUse,
-          systemInstruction: MEDICAL_ASSISTANT_INSTRUCTIONS
-        });
-        
-        // Generate content using the Gemini model
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        console.log("Successfully generated medical assessment using Gemini API library");
-        
-        return Response.json({
-          success: true,
-          response: text
-        });
-      } catch (libraryError) {
-        console.error("Library approach also failed:", libraryError);
-        throw new Error("All API approaches failed");
-      }
+    } catch (error) {
+      console.error("API error:", error);
+      return Response.json({
+        success: false,
+        message: 'Error processing medical query',
+        error: error.message
+      }, { status: 500 });
     }
   } catch (error) {
-    console.error("Error with Gemini API:", error);
+    console.error("Error with request:", error);
     return Response.json({
       success: false,
       message: 'Error processing medical query',
