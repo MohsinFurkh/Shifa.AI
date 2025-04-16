@@ -10,25 +10,35 @@ export async function GET(request) {
     
     // Verify authentication
     const token = request.headers.get('authorization')?.split(' ')[1];
-    if (token) {
-      try {
-        const verified = verifyToken(token);
-        if (!verified || (verified.id !== userId && !verified.isAdmin)) {
-          return NextResponse.json(
-            { error: 'Unauthorized access' },
-            { status: 401 }
-          );
-        }
-      } catch (error) {
-        console.error('Token verification error:', error);
-        return NextResponse.json(
-          { error: 'Invalid token' },
-          { status: 401 }
-        );
-      }
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
     
-    if (!userId) {
+    // Verify the token
+    const verified = verifyToken(token);
+    if (!verified) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+    
+    // Use the user ID from the token if not provided in the query
+    const authenticatedUserId = verified.id;
+    const requestedUserId = userId || authenticatedUserId;
+    
+    // Only allow access to own records unless admin
+    if (authenticatedUserId !== requestedUserId && !verified.isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized access' },
+        { status: 403 }
+      );
+    }
+    
+    if (!requestedUserId) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
@@ -41,17 +51,11 @@ export async function GET(request) {
     // Fetch medical records for the user
     const records = await db
       .collection('medical_records')
-      .find({ userId })
+      .find({ userId: requestedUserId })
       .sort({ date: -1 }) // Sort by date descending (newest first)
       .toArray();
     
-    // If no records exist yet, return sample data for demonstration
-    if (records.length === 0) {
-      return NextResponse.json({
-        records: getSampleMedicalRecords(userId)
-      });
-    }
-    
+    // Return the records, even if it's an empty array
     return NextResponse.json({ records });
   } catch (error) {
     console.error('Error fetching medical records:', error);

@@ -6,10 +6,11 @@ import DashboardLayout from '../../../../components/DashboardLayout';
 import { ClockIcon, PlusIcon, XMarkIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function MedicationsPage() {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const [medications, setMedications] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     dosage: '',
@@ -20,47 +21,39 @@ export default function MedicationsPage() {
     prescribedBy: '',
   });
 
-  // Sample data for demo purposes
-  const sampleMedications = [
-    {
-      id: 1,
-      name: 'Amoxicillin',
-      dosage: '500mg',
-      frequency: 'Every 8 hours',
-      startDate: '2023-06-01',
-      endDate: '2023-06-10',
-      instructions: 'Take with food',
-      prescribedBy: 'Dr. Sarah Ahmed',
-      active: false,
-    },
-    {
-      id: 2,
-      name: 'Lisinopril',
-      dosage: '10mg',
-      frequency: 'Once daily',
-      startDate: '2023-06-15',
-      endDate: '',
-      instructions: 'Take in the morning',
-      prescribedBy: 'Dr. Khalid Khan',
-      active: true,
-    },
-    {
-      id: 3,
-      name: 'Vitamin D',
-      dosage: '1000 IU',
-      frequency: 'Once daily',
-      startDate: '2023-05-01',
-      endDate: '',
-      instructions: 'Take with meal',
-      prescribedBy: 'Dr. Ayesha Malik',
-      active: true,
-    },
-  ];
-
   useEffect(() => {
-    // Simulating API fetch
-    setMedications(sampleMedications);
-  }, []);
+    async function fetchMedications() {
+      if (!user) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const token = await getToken();
+        const userId = user._id || user.id;
+        
+        const response = await fetch(`/api/patient/medications?userId=${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch medications');
+        }
+        
+        const data = await response.json();
+        setMedications(data.medications || []);
+      } catch (err) {
+        console.error('Error fetching medications:', err);
+        setError('Failed to load your medications. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchMedications();
+  }, [user, getToken]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,22 +63,42 @@ export default function MedicationsPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
-    // Create new medication object
-    const newMedication = {
-      id: medications.length + 1,
-      ...formData,
-      active: !formData.endDate || new Date(formData.endDate) >= new Date(),
-    };
-
-    // Simulate API call
-    setTimeout(() => {
-      setMedications([...medications, newMedication]);
+    try {
+      const token = await getToken();
+      
+      const response = await fetch('/api/patient/medications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add medication');
+      }
+      
+      // Fetch updated medications list
+      const updatedResponse = await fetch(`/api/patient/medications?userId=${user._id || user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (updatedResponse.ok) {
+        const data = await updatedResponse.json();
+        setMedications(data.medications || []);
+      }
+      
+      // Reset form and UI state
       setShowAddForm(false);
-      setLoading(false);
       setFormData({
         name: '',
         dosage: '',
@@ -95,11 +108,18 @@ export default function MedicationsPage() {
         instructions: '',
         prescribedBy: '',
       });
-    }, 1000);
+    } catch (err) {
+      console.error('Error adding medication:', err);
+      setError(err.message || 'Failed to add medication. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id) => {
-    setMedications(medications.filter((med) => med.id !== id));
+  const handleDelete = async (id) => {
+    // This would be implemented with a DELETE API endpoint
+    // For now, we'll just update the UI
+    setMedications(medications.filter((med) => med._id !== id));
   };
 
   const activeMedications = medications.filter((med) => med.active);
