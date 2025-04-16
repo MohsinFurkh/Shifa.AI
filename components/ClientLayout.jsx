@@ -9,19 +9,17 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function ClientLayout({ children }) {
   const pathname = usePathname();
-  const { user } = useAuth() || { user: null };
   
   // Determine if it's a protected route
   const isDashboardRoute = pathname?.startsWith('/dashboard');
   
-  // Pass user information to footer for access control
   return (
     <ClientAuthProvider>
       <Header />
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {children}
       </main>
-      <Footer currentUser={user} isDashboardRoute={isDashboardRoute} />
+      <Footer isDashboardRoute={isDashboardRoute} />
       <Toaster 
         position="top-right" 
         toastOptions={{

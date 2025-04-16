@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
 
 const navigation = {
   main: [
@@ -67,43 +68,46 @@ const navigation = {
   ],
 };
 
-export default function Footer({ currentUser, isDashboardRoute }) {
+export default function Footer({ isDashboardRoute }) {
   const router = useRouter();
+  const { user } = useAuth();
   
   // Handle link click with access control
   const handleNavLinkClick = (e, href) => {
+    console.log('Footer link clicked:', href, 'Auth state:', user ? `Logged in as ${user.type}` : 'Not logged in');
+    
     // For patient dashboard links
     if (href.startsWith('/dashboard/patient')) {
-      if (!currentUser) {
+      if (!user) {
         // Not logged in - redirect to login
         e.preventDefault();
         router.push('/login');
         return;
-      } else if (currentUser.type === 'patient') {
+      } else if (user.type === 'patient') {
         // Correct user type - allow navigation to continue normally
         return;
       } else {
         // Wrong user type - redirect to their dashboard
         e.preventDefault();
-        router.push(`/dashboard/${currentUser.type}`);
+        router.push(`/dashboard/${user.type}`);
         return;
       }
     }
     
     // For doctor dashboard links
     if (href.startsWith('/dashboard/doctor')) {
-      if (!currentUser) {
+      if (!user) {
         // Not logged in - redirect to login
         e.preventDefault();
         router.push('/login');
         return;
-      } else if (currentUser.type === 'doctor') {
+      } else if (user.type === 'doctor') {
         // Correct user type - allow navigation to continue normally
         return;
       } else {
         // Wrong user type - redirect to their dashboard
         e.preventDefault();
-        router.push(`/dashboard/${currentUser.type}`);
+        router.push(`/dashboard/${user.type}`);
         return;
       }
     }
