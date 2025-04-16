@@ -72,28 +72,36 @@ export default function Footer({ currentUser, isDashboardRoute }) {
   
   // Handle link click with access control
   const handleNavLinkClick = (e, href) => {
-    // For patient dashboard links, redirect to login if not logged in
-    // or to dashboard if logged in as doctor
+    // For patient dashboard links
     if (href.startsWith('/dashboard/patient')) {
       if (!currentUser) {
+        // Not logged in - redirect to login
         e.preventDefault();
         router.push('/login');
         return;
-      } else if (currentUser.type === 'doctor' || currentUser.type === 'admin') {
+      } else if (currentUser.type === 'patient') {
+        // Correct user type - allow navigation to continue normally
+        return;
+      } else {
+        // Wrong user type - redirect to their dashboard
         e.preventDefault();
         router.push(`/dashboard/${currentUser.type}`);
         return;
       }
     }
     
-    // For doctor dashboard links, redirect to login if not logged in
-    // or to dashboard if logged in as patient
+    // For doctor dashboard links
     if (href.startsWith('/dashboard/doctor')) {
       if (!currentUser) {
+        // Not logged in - redirect to login
         e.preventDefault();
         router.push('/login');
         return;
-      } else if (currentUser.type === 'patient' || currentUser.type === 'admin') {
+      } else if (currentUser.type === 'doctor') {
+        // Correct user type - allow navigation to continue normally
+        return;
+      } else {
+        // Wrong user type - redirect to their dashboard
         e.preventDefault();
         router.push(`/dashboard/${currentUser.type}`);
         return;
