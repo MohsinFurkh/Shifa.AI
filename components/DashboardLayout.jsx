@@ -24,6 +24,7 @@ const userTypeNavigation = {
   patient: [
     { name: 'Dashboard', href: '/dashboard/patient', icon: HomeIcon },
     { name: 'Health Profile', href: '/dashboard/patient/profile', icon: UserIcon },
+    { name: 'Find a Doctor', href: '/dashboard/patient/find-doctor', icon: UserGroupIcon },
     { name: 'Symptom Checker', href: '/dashboard/patient/symptom-checker', icon: ClipboardDocumentListIcon },
     { name: 'Medical Records', href: '/dashboard/patient/records', icon: DocumentTextIcon },
     { name: 'Consultations', href: '/dashboard/patient/consultations', icon: ChatBubbleLeftRightIcon },
