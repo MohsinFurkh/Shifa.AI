@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { EnvelopeIcon } from '@heroicons/react/24/outline';
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [userType, setUserType] = useState('patient');
@@ -199,5 +199,24 @@ export default function ForgotPasswordPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-base font-semibold text-primary-600">Loading</h2>
+          <p className="mt-2 text-sm text-gray-500">Please wait while we prepare your password recovery form.</p>
+          <div className="mt-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 } 
