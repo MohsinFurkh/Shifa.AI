@@ -46,15 +46,40 @@ For symptom assessments, structure your response in these sections:
 - Be comprehensive but concise in explanations
 - Always conclude with a reminder that this is for informational purposes only`;
 
+// Function to make a direct API call to generate content
+async function generateContentDirect(prompt) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`API error: ${JSON.stringify(errorData)}`);
+    }
+    
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error("Direct API call error:", error);
+    throw error;
+  }
+}
+
 export async function POST(request) {
   try {
     const { symptoms, medicalHistory, age, gender } = await request.json();
-
-    // Get the model with system instructions
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.0-pro", // Using a model that's definitely available in v1beta
-      systemInstruction: MEDICAL_ASSISTANT_INSTRUCTIONS
-    });
 
     // Format user information
     let userInfo = "";
@@ -67,19 +92,75 @@ export async function POST(request) {
 ${userInfo}
 Symptoms: ${symptoms}
 
-Please provide a comprehensive medical assessment following the structured format in your instructions.`;
+You are a Medical AI Assistant. Please provide a comprehensive medical assessment with these sections:
+1. Possible Conditions (list 3-5 possibilities)
+2. Recommended Next Steps
+3. When to Seek Immediate Medical Attention
+4. General Health Advice
 
-    // Generate content using the Gemini model
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+Remember to:
+- Avoid definitive diagnoses
+- Use simple language
+- Be empathetic but professional
+- Emphasize consulting healthcare professionals
+- Include a disclaimer that this is for informational purposes only`;
 
-    console.log("Successfully generated medical assessment using Gemini API");
-
-    return Response.json({
-      success: true,
-      response: text
-    });
+    // Try using the direct API approach
+    try {
+      const text = await generateContentDirect(prompt);
+      console.log("Successfully generated medical assessment using direct Gemini API call");
+      
+      return Response.json({
+        success: true,
+        response: text
+      });
+    } catch (directApiError) {
+      console.error("Direct API approach failed:", directApiError);
+      
+      // If direct approach fails, try the library approach with model listing
+      try {
+        // List available models
+        const listModelsResponse = await genAI.listModels();
+        console.log("Available models:", listModelsResponse.models.map(m => m.name));
+        
+        // Find a suitable model
+        const availableModels = listModelsResponse.models.map(m => m.name);
+        let modelToUse = "gemini-pro";
+        
+        if (availableModels.includes("models/gemini-pro")) {
+          modelToUse = "gemini-pro";
+        } else if (availableModels.includes("models/gemini-1.0-pro")) {
+          modelToUse = "gemini-1.0-pro";
+        } else if (availableModels.length > 0) {
+          // Use the first available model
+          const firstModel = availableModels[0];
+          modelToUse = firstModel.replace("models/", "");
+        }
+        
+        console.log("Using model:", modelToUse);
+        
+        // Get the model with system instructions
+        const model = genAI.getGenerativeModel({ 
+          model: modelToUse,
+          systemInstruction: MEDICAL_ASSISTANT_INSTRUCTIONS
+        });
+        
+        // Generate content using the Gemini model
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log("Successfully generated medical assessment using Gemini API library");
+        
+        return Response.json({
+          success: true,
+          response: text
+        });
+      } catch (libraryError) {
+        console.error("Library approach also failed:", libraryError);
+        throw new Error("All API approaches failed");
+      }
+    }
   } catch (error) {
     console.error("Error with Gemini API:", error);
     return Response.json({

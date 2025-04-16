@@ -75,6 +75,54 @@ You are an AI Doctor assistant designed to provide health information and guidan
 - Medication information (provide general info only, not specific recommendations)
 - Pregnancy and childcare (provide general info but emphasize professional care)`;
 
+// Function to make a direct API call to generate content
+async function generateContentDirect(prompt, contextMessages = []) {
+  try {
+    // Format the prompt with context if available
+    let requestBody = {
+      contents: [{
+        parts: [{ text: prompt }]
+      }]
+    };
+    
+    // If we have previous messages, add them to the contents
+    if (contextMessages.length > 0) {
+      requestBody.contents = [
+        ...contextMessages.map(msg => ({
+          role: msg.role,
+          parts: [{ text: msg.content }]
+        })),
+        {
+          role: "user",
+          parts: [{ text: prompt }]
+        }
+      ];
+    }
+    
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`API error: ${JSON.stringify(errorData)}`);
+    }
+    
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error("Direct API call error:", error);
+    throw error;
+  }
+}
+
 // Helper function to verify JWT token
 const verifyToken = (request) => {
   try {
@@ -139,11 +187,7 @@ export async function POST(request) {
           // Get last 10 messages for context
           if (userData.chatHistory && userData.chatHistory.length > 0) {
             previousMessages = userData.chatHistory
-              .slice(-10)
-              .map(msg => ({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.content }]
-              }));
+              .slice(-10);
           }
         }
       } catch (dbError) {
@@ -153,36 +197,79 @@ export async function POST(request) {
     }
     
     try {
-      // Get the Gemini model
-      const model = genAI.getGenerativeModel({
-        model: "gemini-1.0-pro", // Using a model that's definitely available in v1beta
-        systemInstruction: AI_DOCTOR_INSTRUCTIONS
-      });
-      
-      // Prepare the chat
-      const chat = model.startChat({
-        history: previousMessages,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1000,
-        },
-      });
-      
-      // Add context about the mode and user health data if available
-      let contextPrompt = `[Doctor Type: ${doctorType === 'personal' ? 'Personal AI Doctor' : 'General AI Doctor'}]\n`;
+      // Build prompt with doctor type and health info
+      let contextPrompt = `You are an AI Doctor providing health information. 
+Doctor Type: ${doctorType === 'personal' ? 'Personal AI Doctor' : 'General AI Doctor'}
+
+`;
+
       if (userHealthInfo) {
         contextPrompt += userHealthInfo + "\n";
       }
-      contextPrompt += `User query: ${message}`;
+      
+      if (doctorType === 'personal') {
+        contextPrompt += "As a Personal AI Doctor, remember to reference the user's health information in your response.\n\n";
+      } else {
+        contextPrompt += "As a General AI Doctor, provide general information without assuming personal health details.\n\n";
+      }
+      
+      contextPrompt += `User query: ${message}
+
+Remember to:
+- Clarify you are an AI, not a real doctor
+- Avoid making definitive diagnoses
+- Be empathetic yet professional
+- Use simple language for medical concepts
+- Include a disclaimer about seeking professional medical advice`;
       
       console.log(`Processing ${doctorType} doctor request`);
       
-      // Generate response
-      const result = await chat.sendMessage(contextPrompt);
-      const response = await result.response;
-      const aiResponse = response.text();
-      
-      console.log("Successfully generated AI doctor response using Gemini API");
+      // Try using direct API approach first
+      let aiResponse;
+      try {
+        aiResponse = await generateContentDirect(contextPrompt, previousMessages);
+        console.log("Successfully generated AI doctor response using direct Gemini API call");
+      } catch (directApiError) {
+        console.error("Direct API approach failed:", directApiError);
+        
+        // List available models
+        try {
+          const listModelsResponse = await genAI.listModels();
+          console.log("Available models:", listModelsResponse.models.map(m => m.name));
+          
+          // Fall back to the library approach with a suitable model
+          const availableModels = listModelsResponse.models.map(m => m.name);
+          let modelToUse = "gemini-pro";
+          
+          if (availableModels.includes("models/gemini-pro")) {
+            modelToUse = "gemini-pro";
+          } else if (availableModels.includes("models/gemini-1.0-pro")) {
+            modelToUse = "gemini-1.0-pro";
+          } else if (availableModels.length > 0) {
+            // Use the first available model
+            const firstModel = availableModels[0];
+            modelToUse = firstModel.replace("models/", "");
+          }
+          
+          console.log("Using model:", modelToUse);
+          
+          // Prepare the model
+          const model = genAI.getGenerativeModel({
+            model: modelToUse,
+            systemInstruction: AI_DOCTOR_INSTRUCTIONS
+          });
+          
+          // Generate content
+          const result = await model.generateContent(contextPrompt);
+          const response = await result.response;
+          aiResponse = response.text();
+          
+          console.log("Successfully generated AI doctor response using Gemini API library");
+        } catch (libraryError) {
+          console.error("Library approach also failed:", libraryError);
+          throw new Error("All API approaches failed");
+        }
+      }
       
       // Save conversation to database for Personal AI Doctor
       if (doctorType === 'personal') {
