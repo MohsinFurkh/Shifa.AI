@@ -106,8 +106,47 @@ export default function PatientProfilePage() {
     setLoading(true);
     
     try {
-      // First, update the user profile in localStorage
-      const profileUpdated = updateProfile({
+      // Get the auth token
+      const token = user.token;
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
+      // First, update profile in MongoDB
+      const response = await fetch('/api/patient/update-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          dateOfBirth: formData.dateOfBirth,
+          gender: formData.gender,
+          bloodType: formData.bloodType,
+          allergies: formData.allergies,
+          medicalConditions: formData.medicalConditions,
+          medications: formData.medications,
+          height: formData.height,
+          weight: formData.weight,
+          bloodPressure: formData.bloodPressure,
+          heartRate: formData.heartRate,
+          glucoseLevel: formData.glucoseLevel
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+      
+      const data = await response.json();
+      
+      // Now also update the local state via the updateProfile function
+      // This ensures local state stays in sync with the server
+      updateProfile({
         name: formData.name,
         phone: formData.phone,
         dateOfBirth: formData.dateOfBirth,
@@ -116,7 +155,6 @@ export default function PatientProfilePage() {
         allergies: formData.allergies,
         medicalConditions: formData.medicalConditions,
         medications: formData.medications,
-        // Include basic health metrics in the user profile
         height: formData.height,
         weight: formData.weight,
         bloodPressure: formData.bloodPressure,
@@ -125,42 +163,41 @@ export default function PatientProfilePage() {
         lastMetricsUpdate: new Date().toISOString()
       });
       
-      if (profileUpdated && user) {
-        // Get the MongoDB ID (could be in _id or id field)
-        const userId = user._id || user.id;
-        
-        // Extract health metrics for the dedicated health metrics API
-        const healthMetrics = {
-          height: formData.height,
-          weight: formData.weight,
-          bloodPressure: formData.bloodPressure,
-          heartRate: formData.heartRate,
-          glucoseLevel: formData.glucoseLevel,
-          bmi: calculateBMI(),
-          bmiStatus: bmi ? getBMIStatus(Number(bmi)) : null
-        };
-        
-        // Save health metrics to the dedicated API endpoint
-        const response = await fetch('/api/patient/update-health-metrics', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: userId,
-            metrics: healthMetrics
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to update health metrics');
-        }
+      // Extract health metrics for the dedicated health metrics API
+      const healthMetrics = {
+        height: formData.height,
+        weight: formData.weight,
+        bloodPressure: formData.bloodPressure,
+        heartRate: formData.heartRate,
+        glucoseLevel: formData.glucoseLevel,
+        bmi: calculateBMI(),
+        bmiStatus: bmi ? getBMIStatus(Number(bmi)) : null
+      };
+      
+      // Also update the health metrics in their dedicated collection
+      const metricsResponse = await fetch('/api/patient/update-health-metrics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: user._id || user.id,
+          metrics: healthMetrics
+        }),
+      });
+      
+      if (!metricsResponse.ok) {
+        console.warn('Health metrics update failed, but profile was updated successfully');
       }
       
       setIsEditing(false);
+      
+      // Show success message (you could add a toast notification here)
+      
     } catch (error) {
       console.error('Error updating profile and metrics:', error);
-      // You could add error handling UI here
+      // Show error message to user (you could add a toast notification here)
     } finally {
       setLoading(false);
     }
