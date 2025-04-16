@@ -119,6 +119,17 @@ export default function GeneralAIDoctorPage() {
   
   // Format the message content with line breaks
   const formatMessage = (content) => {
+    // Check if content contains HTML tags
+    if (content.includes('<')) {
+      return (
+        <div 
+          className="markdown-content"
+          dangerouslySetInnerHTML={{ __html: content }} 
+        />
+      );
+    }
+    
+    // Regular formatting for plain text
     return content.split('\n').map((line, i) => (
       <span key={i}>
         {line}
@@ -129,6 +140,52 @@ export default function GeneralAIDoctorPage() {
 
   return (
     <div className="container mx-auto py-8 h-full flex flex-col">
+      <style jsx global>{`
+        .markdown-content {
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+        
+        .markdown-content h1, 
+        .markdown-content h2, 
+        .markdown-content h3, 
+        .markdown-content h4 {
+          font-weight: 600;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+        }
+        
+        .markdown-content h1 {
+          font-size: 1.25rem;
+        }
+        
+        .markdown-content h2 {
+          font-size: 1.15rem;
+        }
+        
+        .markdown-content h3 {
+          font-size: 1.05rem;
+        }
+        
+        .markdown-content p {
+          margin-bottom: 0.75rem;
+        }
+        
+        .markdown-content ul, 
+        .markdown-content ol {
+          margin-left: 1.5rem;
+          margin-bottom: 0.75rem;
+        }
+        
+        .markdown-content li {
+          margin-bottom: 0.25rem;
+        }
+        
+        .markdown-content strong {
+          font-weight: 600;
+        }
+      `}</style>
+      
       <div className="flex items-center justify-between mb-6">
         <Link 
           href="/dashboard/patient/ai-doctor" 

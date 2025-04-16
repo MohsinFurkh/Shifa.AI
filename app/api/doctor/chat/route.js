@@ -4,8 +4,8 @@ import { connectToDatabase } from '../../../../lib/mongodb';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-for-development-only';
-// Add API key directly in the code
-const GEMINI_API_KEY = 'AIzaSyAbbalJSTZt-r7RDEG4VGkiwdEduZD04X4';
+// Updated API key - use environment variable if available or fallback
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAbbalJSTZt-r7RDEG4VGkiwdEduZD04X4';
 
 // Initialize Google Generative AI client
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -99,8 +99,10 @@ async function generateContentDirect(prompt, contextMessages = []) {
       ];
     }
     
+    console.log("Sending request to Gemini API:", JSON.stringify(requestBody, null, 2));
+    
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -112,10 +114,18 @@ async function generateContentDirect(prompt, contextMessages = []) {
     
     if (!response.ok) {
       const errorData = await response.json();
+      console.error("Gemini API error response:", errorData);
       throw new Error(`API error: ${JSON.stringify(errorData)}`);
     }
     
     const data = await response.json();
+    console.log("Gemini API response:", JSON.stringify(data, null, 2));
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+      console.error("Unexpected API response structure:", data);
+      throw new Error("Unexpected API response structure");
+    }
+    
     return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error("Direct API call error:", error);
